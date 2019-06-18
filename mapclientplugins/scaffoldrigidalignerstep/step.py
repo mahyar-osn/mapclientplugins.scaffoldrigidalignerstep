@@ -8,7 +8,8 @@ from PySide import QtGui
 
 from mapclient.mountpoints.workflowstep import WorkflowStepMountPoint
 from mapclientplugins.scaffoldrigidalignerstep.configuredialog import ConfigureDialog
-
+from mapclientplugins.scaffoldrigidalignerstep.model.mastermodel import MasterModel
+from mapclientplugins.scaffoldrigidalignerstep.view.scaffoldrigidalignerwidget import ScaffoldRigidAlignerWidget
 
 class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
     """
@@ -25,20 +26,21 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
         # Ports:
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#uses',
-                      '<not-set>'))
+                      'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location'))
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#uses',
-                      '<not-set>'))
+                      'generator_model'))
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
                       '<not-set>'))
         # Port data:
-        self._portData0 = None # <not-set>
-        self._portData1 = None # <not-set>
-        self._portData2 = None # <not-set>
+        self._pointCloudData = None  # file_location: point cloud data
+        self._scaffoldParams = None  # scaffold
+        self._portData2 = None  # <not-set>
         # Config:
         self._config = {}
         self._config['identifier'] = ''
+        self._view = None
 
     def execute(self):
         """
@@ -47,7 +49,17 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
         may be connected up to a button in a widget for example.
         """
         # Put your execute step code here before calling the '_doneExecution' method.
-        self._doneExecution()
+        if self._view is None:
+            context = 'ScaffoldRigidAlignerContext'
+            model = MasterModel(context)
+            model.initialise_scaffold(self._scaffoldParams[0])
+            model.initialise_data(self._pointCloudData)
+
+            self._view = ScaffoldRigidAlignerWidget(model)
+            self._view.create_graphics()
+            self._view.register_done_execution(self._doneExecution)
+
+        self._setCurrentWidget(self._view)
 
     def setPortData(self, index, dataIn):
         """
@@ -59,9 +71,9 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
         :param dataIn: The data to set for the port at the given index.
         """
         if index == 0:
-            self._portData0 = dataIn # <not-set>
+            self._pointCloudData = dataIn  # file_location: point cloud data
         elif index == 1:
-            self._portData1 = dataIn # <not-set>
+            self._scaffoldParams = dataIn  # scaffold
 
     def getPortData(self, index):
         """
