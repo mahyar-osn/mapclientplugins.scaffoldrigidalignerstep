@@ -1,0 +1,6 @@
+
+<RCC>
+  <qresource prefix="scaffoldrigidalignerstep">
+    <file>images/registration.png</file>
+  </qresource>
+</RCC>
