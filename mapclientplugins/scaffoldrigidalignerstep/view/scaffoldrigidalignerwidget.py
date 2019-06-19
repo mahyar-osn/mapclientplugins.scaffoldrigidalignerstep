@@ -103,6 +103,8 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
             self._ui.overlaySceneviewerWidget.view_all()
 
     def _done_clicked(self):
+        self._model.done()
+        self._model = None
         self._done_callback()
 
     def _set_scaffold_checkbox(self, value):
