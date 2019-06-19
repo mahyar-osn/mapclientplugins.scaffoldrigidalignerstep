@@ -18,7 +18,6 @@ class ScaffoldModel(object):
         self._initialise_scene()
         self._scaffold_coordinate_field = None
         self._initialise_surface_material()
-        self._axis_settings = {'Up': 'Z', 'Upside': False}
 
     def _create_axis_graphics(self):
         fm = self._region.getFieldmodule()
