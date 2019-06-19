@@ -28,7 +28,8 @@ class MasterModel(object):
         self._initialise_glyph_material()
         self._initialise_tessellation(12)
 
-        self._settings = dict(yaw=0.0, pitch=0.0, roll=0.0, scaffold_up=None, data_up=None, flip=None)
+        self._settings = dict(partial_z=None, partial_y=None, partial_x=None, yaw=0.0, pitch=0.0, roll=0.0,
+                              scaffold_up=None, data_up=None, flip=None)
 
         self._data_coordinate_field = None
         self._scaffold_coordinate_field = None
@@ -47,7 +48,8 @@ class MasterModel(object):
         self._tessellationmodule.setRefinementFactors([res])
 
     def reset_settings(self):
-        self._settings = dict(yaw=0.0, pitch=0.0, roll=0.0, scaffold_up=None, data_up=None, flip=None)
+        self._settings = dict(partial_z=None, partial_y=None, partial_x=None, yaw=0.0, pitch=0.0, roll=0.0,
+                              scaffold_up=None, data_up=None, flip=None)
         self._apply_callback()
         self.initialise_scaffold(self._scaffold_path)
 
@@ -90,8 +92,50 @@ class MasterModel(object):
     def get_flip(self):
         return self._settings['flip']
 
-    def get_scaffold_to_data_ratio(self):
-        diff = maths.eldiv(self._scaffold_model.get_scale(), self._data_model.get_scale())
+    def get_scaffold_to_data_ratio(self, partial=None):
+        if partial:
+            # Partial X
+            if [x for x in partial.keys()][0] == 'X':
+                if partial['X'] != 0.0:
+                    data_range_temp = self._data_model.get_scale()
+                    correction_factor = [partial['X'], 1.0, 1.0]
+                    data_range = maths.eldiv(data_range_temp, correction_factor)
+                    diff = maths.eldiv(self._scaffold_model.get_scale(), data_range)
+                else:
+                    scaffold_range = self._scaffold_model.get_scale()
+                    data_range = self._data_model.get_scale()[1:]
+                    data_range.insert(0, self._scaffold_model.get_scale()[0])
+                    diff = maths.eldiv(scaffold_range, data_range)
+            # Partial Y
+            elif [x for x in partial.keys()][0] == 'Y':
+                if partial['Y'] != 0.0:
+                    data_range_temp = self._data_model.get_scale()
+                    correction_factor = [1.0, partial['Y'], 1.0]
+                    data_range = maths.eldiv(data_range_temp, correction_factor)
+                    diff = maths.eldiv(self._scaffold_model.get_scale(), data_range)
+                else:
+                    scaffold_range = self._scaffold_model.get_scale()
+                    data_range = self._data_model.get_scale()
+                    del data_range[1]
+                    data_range.insert(1, self._scaffold_model.get_scale()[1])
+                    diff = maths.eldiv(scaffold_range, data_range)
+            # Partial Z
+            elif [x for x in partial.keys()][0] == 'Z':
+                if partial['Z'] != 0.0:
+                    data_range_temp = self._data_model.get_scale()
+                    correction_factor = [1.0, 1.0, partial['Z']]
+                    data_range = maths.eldiv(data_range_temp, correction_factor)
+                    diff = maths.eldiv(self._scaffold_model.get_scale(), data_range)
+                else:
+                    scaffold_range = self._scaffold_model.get_scale()
+                    data_range = self._data_model.get_scale()
+                    del data_range[2]
+                    data_range.insert(2, self._scaffold_model.get_scale()[2])
+                    diff = maths.eldiv(scaffold_range, data_range)
+            else:
+                raise ValueError('Incorrect partial value.')
+        else:
+            diff = maths.eldiv(self._scaffold_model.get_scale(), self._data_model.get_scale())
         return sum(diff) / len(diff)
 
     def initialise_scaffold(self, file_name):
