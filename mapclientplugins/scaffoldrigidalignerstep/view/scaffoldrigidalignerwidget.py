@@ -157,12 +157,32 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
         pass
 
     def _apply_axis_orientation(self):
+        partial_data = dict()
+        # Partial X:
+        if self._ui.partialXlineEdit.text() is not '':
+            partial_data['X'] = float(self._ui.partialXlineEdit.text())
+            self._ui.partialY_lineEdit.setEnabled(False)
+            self._ui.partialZ_lineEdit.setEnabled(False)
+
+        # Partial Y
+        if self._ui.partialY_lineEdit.text() is not '':
+            partial_data['Y'] = float(self._ui.partialY_lineEdit.text())
+            self._ui.partialXlineEdit.setEnabled(False)
+            self._ui.partialZ_lineEdit.setEnabled(False)
+
+        # Partial Z
+        if self._ui.partialZ_lineEdit.text() is not '':
+            partial_data['Z'] = float(self._ui.partialZ_lineEdit.text())
+            self._ui.partialXlineEdit.setEnabled(False)
+            self._ui.partialY_lineEdit.setEnabled(False)
+
+        # Apply orientation
         self._model.apply_orientation()
-        self._scale_ratio_display()
+        self._scale_ratio_display(partial_data)
         self._ui.axisDone_pushButton.setEnabled(False)
 
-    def _scale_ratio_display(self):
-        self._display_real(self._ui.scaleRatio_lineEdit, self._model.get_scaffold_to_data_ratio())
+    def _scale_ratio_display(self, partial=None):
+        self._display_real(self._ui.scaleRatio_lineEdit, self._model.get_scaffold_to_data_ratio(partial=partial))
 
     def _yaw_clicked(self):
         value = self._ui.yaw_doubleSpinBox.value()
