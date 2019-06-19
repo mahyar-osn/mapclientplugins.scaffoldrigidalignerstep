@@ -35,6 +35,7 @@ class MasterModel(object):
         self._transformed_scaffold_field = None
         self._settings_change_callback = None
         self._location = None
+        self._aligned_scaffold_filename = None
 
     def _initialise_glyph_material(self):
         self._glyph_module = self._context.getGlyphmodule()
@@ -122,6 +123,13 @@ class MasterModel(object):
 
     def set_location(self, location):
         self._location = location
+        if platform.system() == 'Windows':
+            path = '\\'.join(self._location.split('\\')[:-1])
+            file_name = path + '\\aligned_mesh.exf'
+        else:
+            path = '/'.join(self._location.split('/')[:-1])
+            file_name = path + '/aligned_mesh.exf'
+        self._aligned_scaffold_filename = file_name
 
     def load_settings(self):
         if platform.system() == 'Windows':
@@ -177,5 +185,19 @@ class MasterModel(object):
     def set_settings_change_callback(self, settings_change_callback):
         self._settings_change_callback = settings_change_callback
 
+    def _align_scaffold_on_data(self):
+        data_minimums, data_maximums = self._data_model.get_range()
+        data_centre = maths.mult(maths.add(data_minimums, data_maximums), 0.5)
+        model_minimums, model_maximums = self._scaffold_model.get_range()
+        model_centre = maths.mult(maths.add(model_minimums, model_maximums), 0.5)
+        offset = maths.sub(data_centre, model_centre)
+        zincutils.offset_scaffold(self._scaffold_coordinate_field, offset)
+        self._scaffold_model.set_coordinate_field(self._scaffold_coordinate_field)
+
     def _update_scaffold_coordinate_field(self):
         self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
+
+    def done(self):
+        self._align_scaffold_on_data()
+        self.save_settings()
+        self._scaffold_model.write_model(self._aligned_scaffold_filename)
