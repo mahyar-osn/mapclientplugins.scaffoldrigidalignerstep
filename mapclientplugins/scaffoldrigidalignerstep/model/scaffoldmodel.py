@@ -4,6 +4,8 @@ from opencmiss.zinc.glyph import Glyph
 from opencmiss.zinc.material import Material
 from opencmiss.zinc.scenecoordinatesystem import SCENECOORDINATESYSTEM_NORMALISED_WINDOW_FIT_TOP
 
+from ..utils import maths
+
 
 class ScaffoldModel(object):
 
@@ -16,12 +18,13 @@ class ScaffoldModel(object):
         self._initialise_scene()
         self._scaffold_coordinate_field = None
         self._initialise_surface_material()
+        self._axis_settings = {'Up': 'Z', 'Upside': False}
 
     def _create_axis_graphics(self):
         fm = self._region.getFieldmodule()
         components_count = self._scaffold_coordinate_field.getNumberOfComponents()
         axes_scale = 1.0
-        min_x, max_x = self._get_node_coordinates_range(self._scaffold_coordinate_field)
+        min_x, max_x = self._get_node_coordinates_range()
         if components_count == 1:
             max_range = max_x - min_x
         else:
@@ -93,14 +96,13 @@ class ScaffoldModel(object):
         self._create_axis_graphics()
         self._set_window_name()
 
-    @staticmethod
-    def _get_node_coordinates_range(coordinates):
-        fm = coordinates.getFieldmodule()
+    def _get_node_coordinates_range(self):
+        fm = self._scaffold_coordinate_field.getFieldmodule()
         fm.beginChange()
         nodes = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
-        min_coordinates = fm.createFieldNodesetMinimum(coordinates, nodes)
-        max_coordinates = fm.createFieldNodesetMaximum(coordinates, nodes)
-        components_count = coordinates.getNumberOfComponents()
+        min_coordinates = fm.createFieldNodesetMinimum(self._scaffold_coordinate_field, nodes)
+        max_coordinates = fm.createFieldNodesetMaximum(self._scaffold_coordinate_field, nodes)
+        components_count = self._scaffold_coordinate_field.getNumberOfComponents()
         cache = fm.createFieldcache()
         result, min_x = min_coordinates.evaluateReal(cache, components_count)
         result, max_x = max_coordinates.evaluateReal(cache, components_count)
@@ -153,6 +155,10 @@ class ScaffoldModel(object):
         else:
             raise ValueError('Scaffold scene is not initialised.')
 
+    def get_scale(self):
+        minimums, maximums = self._get_node_coordinates_range()
+        return maths.sub(minimums, maximums)
+
     def _getMesh(self):
         fm = self._region.getFieldmodule()
         for dimension in range(3, 0, -1):
@@ -183,6 +189,11 @@ class ScaffoldModel(object):
         self._scaffold_coordinate_field = field
         return field
 
+    def set_coordinate_field(self, field):
+        if self._scaffold_coordinate_field is not None:
+            self._scaffold_coordinate_field = None
+        self._scaffold_coordinate_field = field
+
     def _set_window_name(self):
         fm = self._region.getFieldmodule()
         window_label = self._scene.createGraphicsPoints()
@@ -196,3 +207,11 @@ class ScaffoldModel(object):
         tmp = fm.createFieldStringConstant(' ')
         pointattr.setLabelField(tmp)
         window_label.setMaterial(self._material_module.findMaterialByName('yellow'))
+
+    def set_scaffold_graphics_post_rotate(self, field):
+        self._scene.beginChange()
+        for name in ['display_lines', 'display_surfaces']:
+            graphics = self._scene.findGraphicsByName(name)
+            graphics.setCoordinateField(field)
+        self._scene.endChange()
+        self.set_coordinate_field(field)
