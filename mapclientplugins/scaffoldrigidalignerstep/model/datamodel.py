@@ -142,6 +142,10 @@ class DataModel(object):
         del maximums_field
         return minimums, maximums
 
+    def get_scale(self):
+        minimums, maximums = self._get_data_range()
+        return maths.sub(minimums, maximums)
+
     def _set_window_name(self):
         fm = self._region.getFieldmodule()
         window_label = self._scene.createGraphicsPoints()
