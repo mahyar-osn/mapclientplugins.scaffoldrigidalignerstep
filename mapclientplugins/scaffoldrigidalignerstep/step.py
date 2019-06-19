@@ -2,6 +2,7 @@
 """
 MAP Client Plugin Step
 """
+import os
 import json
 
 from PySide import QtGui
@@ -51,9 +52,10 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
         # Put your execute step code here before calling the '_doneExecution' method.
         if self._view is None:
             context = 'ScaffoldRigidAlignerContext'
-            model = MasterModel(context)
+            model = MasterModel(context, self._scaffoldParams[0])
             model.initialise_scaffold(self._scaffoldParams[0])
             model.initialise_data(self._pointCloudData)
+            model.set_location(os.path.join(self._location, self._config['identifier']))
 
             self._view = ScaffoldRigidAlignerWidget(model)
             self._view.create_graphics()
