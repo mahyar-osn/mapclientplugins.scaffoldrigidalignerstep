@@ -66,7 +66,7 @@ class ScaffoldModel(object):
         pointattr = axes.getGraphicspointattributes()
         pointattr.setGlyphShapeType(Glyph.SHAPE_TYPE_AXES_XYZ)
         pointattr.setBaseSize([axes_scale, axes_scale, axes_scale])
-        pointattr.setGlyphOffset([-5.0, 1.0, 0.])
+        pointattr.setGlyphOffset([-3.0, 1.0, 0.])
         pointattr.setBaseSize(axes_scale)
         axes.setMaterial(self._material_module.findMaterialByName('red'))
         axes.setName('display_axes')
@@ -107,6 +107,9 @@ class ScaffoldModel(object):
         result, max_x = max_coordinates.evaluateReal(cache, components_count)
         fm.endChange()
         return min_x, max_x
+
+    def get_range(self):
+        return self._get_node_coordinates_range()
 
     def _initialise_surface_material(self):
         self._material_module = self._context.getMaterialmodule()
@@ -214,3 +217,6 @@ class ScaffoldModel(object):
             graphics.setCoordinateField(field)
         self._scene.endChange()
         self.set_coordinate_field(field)
+
+    def write_model(self, filename):
+        self._region.writeFile(filename)
