@@ -4,6 +4,7 @@ import platform
 from opencmiss.zinc.context import Context
 from opencmiss.zinc.field import Field
 from opencmiss.zinc.status import OK as ZINC_OK
+from opencmiss.zinc.streamregion import StreaminformationRegion
 
 from .scaffoldmodel import ScaffoldModel
 from .datamodel import DataModel
@@ -132,6 +133,9 @@ class MasterModel(object):
 
     def get_flip(self):
         return self._settings['flip']
+
+    def _get_time_sequence(self):
+        return self._data_model.get_time_sequence()
 
     def get_scaffold_to_data_ratio(self, partial=None):
         if partial:
@@ -299,7 +303,94 @@ class MasterModel(object):
     def _update_scaffold_coordinate_field(self):
         self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
 
-    def done(self):
+    def done(self, time=False):
         self._align_scaffold_on_data()
         self.save_settings()
         self._scaffold_model.write_model(self._aligned_scaffold_filename)
+        model_description = self._get_model_description(time)
+        return model_description
+
+    def _write_scaffold(self):
+        resources = {}
+        stream_information = self._scaffold_region.createStreaminformationRegion()
+        memory_resource = stream_information.createStreamresourceMemory()
+        resources['elements'] = memory_resource
+        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_MESH3D)
+        memory_resource = stream_information.createStreamresourceMemory()
+        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_NODES)
+        resources['nodes'] = memory_resource
+        self._scaffold_region.write(stream_information)
+
+        buffer_contents = {}
+        for key in resources:
+            buffer_contents[key] = resources[key].getBuffer()[1]
+
+        return buffer_contents
+
+    def _write_data(self, time_series=False):
+        resources = {}
+        stream_information = self._data_region.createStreaminformationRegion()
+        if time_series:
+            time_values = self._get_time_sequence()
+            for time_value in time_values:
+                memory_resource = stream_information.createStreamresourceMemory()
+                stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_DATAPOINTS)
+                stream_information.setResourceAttributeReal(memory_resource, StreaminformationRegion.ATTRIBUTE_TIME,
+                                                            time_value)
+                resources['datapoints_' + str(time_value)] = memory_resource
+                self._data_region.write(stream_information)
+
+                buffer_contents = {}
+                for key in resources:
+                    buffer_contents[key] = resources[key].getBuffer()[1]
+
+                return buffer_contents, time_value
+
+            else:
+                memory_resource = stream_information.createStreamresourceMemory()
+                stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_DATAPOINTS)
+                resources['datapoints'] = memory_resource
+                self._data_region.write(stream_information)
+
+                buffer_contents = {}
+                for key in resources:
+                    buffer_contents[key] = resources[key].getBuffer()[1]
+
+                return buffer_contents
+
+    def _get_model_description(self, time=False):
+        scaffold_region_description = self._write_scaffold()
+        if time:
+            data_region_description, time_sequence = self._write_data(time)
+        else:
+            time_sequence = None
+            data_region_description = self._write_data()
+        model_description = ModelDescription(scaffold_region_description, data_region_description, time_sequence)
+
+        return model_description
+
+
+class ModelDescription(object):
+
+    def __init__(self, scaffold_region_description, data_region_description, time=None):
+        self._scaffold_region_description = scaffold_region_description
+        self._data_region_description = data_region_description
+        if time:
+            self._time = time
+        else:
+            self._time = []
+
+    def get_scaffold_region_description(self):
+        return self._scaffold_region_description
+
+    def get_data_region_description(self):
+        return self._data_region_description
+
+    def get_start_time(self):
+        return self._time[0]
+
+    def get_end_time(self):
+        return self._time[-1]
+
+    def get_epoch_count(self):
+        return len(self._time)
