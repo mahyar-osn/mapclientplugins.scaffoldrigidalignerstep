@@ -22,7 +22,9 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
 
         self._done_callback = None
         self._settings = {'view-parameters': {}}
+        self._partial_data = dict()
         self._model.set_settings_change_callback(self._setting_display)
+        self._temporal_data_flag = False
         self._make_connections()
 
     def _make_connections(self):
@@ -30,6 +32,11 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
         self._ui.overlaySceneviewerWidget.graphics_initialized.connect(self._graphics_initialized)
         self._ui.doneButton.clicked.connect(self._done_clicked)
         self._ui.viewAllButton.clicked.connect(self._view_all)
+        self._ui.timeYes_radioButton.clicked.connect(self._data_is_temporal)
+        self._ui.timeNo_radioButton.clicked.connect(self._data_is_static)
+        self._ui.timeSkip_pushButton.clicked.connect(self._confirm_and_load)
+        self._ui.timePoint_spinBox.valueChanged.connect(self._time_changed)
+        self._ui.partialData_checkBox.clicked.connect(self._data_is_partial)
         self._ui.scaffoldZ_radioButton.clicked.connect(self._scaffold_z_up)
         self._ui.scaffoldY_radioButton.clicked.connect(self._scaffold_y_up)
         self._ui.scaffoldX_radioButton.clicked.connect(self._scaffold_x_up)
@@ -41,6 +48,7 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
         self._ui.yaw_doubleSpinBox.valueChanged.connect(self._yaw_clicked)
         self._ui.pitch_doubleSpinBox.valueChanged.connect(self._pitch_clicked)
         self._ui.roll_doubleSpinBox.valueChanged.connect(self._roll_clicked)
+        self._ui.scaleRatio_pushButton.clicked.connect(self._calculate_scale_clicked)
         self._ui.saveSettingsButton.clicked.connect(self._save_settings)
         self._ui.loadSettingsButton.clicked.connect(self._load_settings)
         self._ui.alignResetButton.clicked.connect(self._reset)
@@ -53,7 +61,7 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
         self._set_data_checkbox(self._model.get_data_up())
         self._set_flip(self._model.get_flip())
 
-    def create_graphics(self):
+    def _create_graphics(self):
         self._model.create_graphics()
 
     def _get_shareable_open_gl_widget(self):
@@ -156,30 +164,45 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
     def _data_upside_down(self):
         pass
 
-    def _apply_axis_orientation(self):
-        partial_data = dict()
+    def _data_is_partial(self):
+        if self._ui.partialData_checkBox.isChecked():
+            self._ui.partialZ_lineEdit.setEnabled(True)
+            self._ui.partialY_lineEdit.setEnabled(True)
+            self._ui.partialXlineEdit.setEnabled(True)
+        else:
+            self._ui.partialZ_lineEdit.setEnabled(False)
+            self._ui.partialY_lineEdit.setEnabled(False)
+            self._ui.partialXlineEdit.setEnabled(False)
+
+    def _check_if_data_is_partial(self):
         # Partial X:
         if self._ui.partialXlineEdit.text() is not '':
-            partial_data['X'] = float(self._ui.partialXlineEdit.text())
+            self._partial_data['X'] = float(self._ui.partialXlineEdit.text())
             self._ui.partialY_lineEdit.setEnabled(False)
             self._ui.partialZ_lineEdit.setEnabled(False)
 
         # Partial Y
         if self._ui.partialY_lineEdit.text() is not '':
-            partial_data['Y'] = float(self._ui.partialY_lineEdit.text())
+            self._partial_data['Y'] = float(self._ui.partialY_lineEdit.text())
             self._ui.partialXlineEdit.setEnabled(False)
             self._ui.partialZ_lineEdit.setEnabled(False)
 
         # Partial Z
         if self._ui.partialZ_lineEdit.text() is not '':
-            partial_data['Z'] = float(self._ui.partialZ_lineEdit.text())
+            self._partial_data['Z'] = float(self._ui.partialZ_lineEdit.text())
             self._ui.partialXlineEdit.setEnabled(False)
             self._ui.partialY_lineEdit.setEnabled(False)
 
+    def _apply_axis_orientation(self):
+        self._check_if_data_is_partial()
         # Apply orientation
         self._model.apply_orientation()
-        self._scale_ratio_display(partial_data)
         self._ui.axisDone_pushButton.setEnabled(False)
+        self._ui.scaleRatio_pushButton.setEnabled(True)
+
+    def _calculate_scale_clicked(self):
+        self._check_if_data_is_partial()
+        self._scale_ratio_display(self._partial_data)
 
     def _scale_ratio_display(self, partial=None):
         self._display_real(self._ui.scaleRatio_lineEdit, self._model.get_scaffold_to_data_ratio(partial=partial))
@@ -201,8 +224,37 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
 
     def _load_settings(self):
         self._model.load_settings()
-        self._scale_ratio_display()
-        self._ui.axisDone_pushButton.setEnabled(False)
+        self._ui.axisDone_pushButton.setEnabled(True)
+
+    def _data_is_temporal(self):
+        self._temporal_data_flag = True
+        self._ui.timeSkip_pushButton.setEnabled(True)
+
+    def _confirm_and_load(self):
+        if self._temporal_data_flag:
+            self._ui.timePoint_spinBox.setEnabled(True)
+            self._ui.timePoint_label.setEnabled(True)
+            self._model.load_json_data()
+        else:
+            self._model.load_ex_data()
+        self._create_graphics()
+        self._model.set_time_value(0.0)
+        self._model.initialise_time_graphics(0.0)
+        self._view_all()
+        self._ui.timePoint_spinBox.setMaximum(self._model.get_maximum_time_from_data())
+
+    def _time_changed(self):
+        time_value = self._ui.timePoint_spinBox.value()
+        self._model.set_time_value(time_value)
+
+    def _skip_value_changed(self):
+        self._ui.timeSkip_pushButton.setEnabled(True)
+
+    def _data_is_static(self):
+        self._temporal_data_flag = False
+        self._ui.timePoint_spinBox.setEnabled(False)
+        self._ui.timePoint_label.setEnabled(False)
+        self._ui.timeSkip_pushButton.setEnabled(True)
 
     def _reset(self):
         self._model.reset_settings()
