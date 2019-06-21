@@ -10,8 +10,14 @@ from .datamodel import DataModel
 from ..utils import maths
 from ..utils import zincutils
 
+if platform.system() == 'Windows':
+    WINDOWS_OS_FLAG = True
+else:
+    LINUX_OS_FLAG = True
+
 
 class MasterModel(object):
+
     def __init__(self, context, scaffold_path):
 
         self._context = Context(context)
@@ -22,14 +28,24 @@ class MasterModel(object):
         self._data_region.setName('data_region')
         self._scaffold_path = scaffold_path
 
+        self._data_file_name = None
+        self._data_sir = None
+
         self._scaffold_model = ScaffoldModel(self._context, self._scaffold_region, self._material_module)
         self._data_model = DataModel(self._context, self._data_region, self._material_module)
+
+        self._timekeeper = self._context.getTimekeepermodule().getDefaultTimekeeper()
+        self._current_time = None
 
         self._initialise_glyph_material()
         self._initialise_tessellation(12)
 
-        self._settings = dict(partial_z=None, partial_y=None, partial_x=None, yaw=0.0, pitch=0.0, roll=0.0,
-                              scaffold_up=None, data_up=None, flip=None)
+        self._settings = dict(partial_z=None, partial_y=None, partial_x=None,
+                              yaw=0.0, pitch=0.0, roll=0.0,
+                              scaffold_up=None, data_up=None,
+                              flip=None)
+
+        self._os_specific_sep = '\\' if WINDOWS_OS_FLAG else '/'
 
         self._data_coordinate_field = None
         self._scaffold_coordinate_field = None
@@ -47,9 +63,34 @@ class MasterModel(object):
         self._tessellationmodule = self._tessellationmodule.getDefaultTessellation()
         self._tessellationmodule.setRefinementFactors([res])
 
+    def initialise_time_graphics(self, time):
+        self._timekeeper.setTime(time)
+        # data_positions = self._get_data_positions_at_time(time)
+        # print(data_positions)
+
+    def _get_data_positions_at_time(self, time_index):
+        field_module = self._data_region.getFieldmodule()
+        field_module.beginChange()
+        cache = field_module.createFieldcache()
+        cache.setTime(time_index)
+        coordinates = field_module.findFieldByName('data_coordinates')
+        node_set = field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
+        node_iterator = node_set.createNodeiterator()
+        node = node_iterator.next()
+        node_positions = []
+        while node.isValid():
+            cache.setNode(node)
+            _, position = coordinates.evaluateReal(cache, 3)
+            node_positions.append(position)
+            node = node_iterator.next()
+        field_module.endChange()
+        return node_positions
+
     def reset_settings(self):
-        self._settings = dict(partial_z=None, partial_y=None, partial_x=None, yaw=0.0, pitch=0.0, roll=0.0,
-                              scaffold_up=None, data_up=None, flip=None)
+        self._settings = dict(partial_z=None, partial_y=None, partial_x=None,
+                              yaw=0.0, pitch=0.0, roll=0.0,
+                              scaffold_up=None, data_up=None,
+                              flip=None)
         self._apply_callback()
         self.initialise_scaffold(self._scaffold_path)
 
@@ -146,14 +187,31 @@ class MasterModel(object):
             raise ValueError('Failed to read and initialise scaffold.')
         self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
 
-    def initialise_data(self, file_name):
-        sir = self._data_region.createStreaminformationRegion()
-        data_point_resource = sir.createStreamresourceFile(file_name)
-        sir.setResourceDomainTypes(data_point_resource, Field.DOMAIN_TYPE_DATAPOINTS)
-        result = self._data_region.read(sir)
+    def initialise_ex_data(self, file_name):
+        self._data_sir = self._data_region.createStreaminformationRegion()
+        self._data_file_name = file_name
+
+    def _initialise_ex_data(self):
+        data_point_resource = self._data_sir.createStreamresourceFile(self._data_file_name)
+        self._data_sir.setResourceDomainTypes(data_point_resource, Field.DOMAIN_TYPE_DATAPOINTS)
+        result = self._data_region.read(self._data_sir)
         if result != ZINC_OK:
             raise ValueError('Failed to read point cloud')
         self._data_coordinate_field = self._data_model.get_coordinate_field()
+
+    def load_ex_data(self):
+        self._initialise_ex_data()
+
+    def initialise_json_data(self, file_name):
+        self._data_file_name = file_name
+
+    def _initialise_jason_data(self):
+        with open(self._data_file_name, 'r') as f:
+            json_dict = json.loads(f.read())
+        self._data_coordinate_field = self._data_model.set_data_coordinate_field_from_json_file(json_dict)
+
+    def load_json_data(self):
+        self._initialise_jason_data()
 
     def create_graphics(self):
         self._scaffold_model.create_scaffold_graphics()
@@ -165,41 +223,41 @@ class MasterModel(object):
     def set_data_axis(self, axis):
         self._settings['data_up'] = axis
 
+    def set_time_value(self, time):
+        self._current_time = time
+        self._timekeeper.setTime(time)
+        self._data_model.set_time(time)
+        # self._data_model.change_graphics()
+
+    def get_maximum_time_from_data(self):
+        return self._data_model.get_maximum_time()
+
     def set_location(self, location):
         self._location = location
-        if platform.system() == 'Windows':
-            path = '\\'.join(self._location.split('\\')[:-1])
-            file_name = path + '\\aligned_mesh.exf'
-        else:
-            path = '/'.join(self._location.split('/')[:-1])
-            file_name = path + '/aligned_mesh.exf'
+        path = self._os_specific_sep.join(self._location.split(self._os_specific_sep)[:-1])
+        file_name = path + self._os_specific_sep + 'aligned_mesh.exf'
         self._aligned_scaffold_filename = file_name
 
     def load_settings(self):
-        if platform.system() == 'Windows':
-            path = '\\'.join(self._location.split('\\')[:-1])
-            file_name = path + '\\rigid-settings.json'
-        else:
-            path = '/'.join(self._location.split('/')[:-1])
-            file_name = path + '/rigid-settings.json'
+        path = self._os_specific_sep.join(self._location.split(self._os_specific_sep)[:-1])
+        file_name = path + self._os_specific_sep + 'rigid-settings.json'
         with open(file_name, 'r') as f:
             self._settings.update(json.loads(f.read()))
+
+    def apply_after_load_settings(self):
         self.apply_orientation()
         self._apply_callback()
 
     def save_settings(self):
-        if platform.system() == 'Windows':
-            path = '\\'.join(self._location.split('\\')[:-1])
-            file_name = path + '\\rigid-settings.json'
-        else:
-            path = '/'.join(self._location.split('/')[:-1])
-            file_name = path + '/rigid-settings.json'
+        path = self._os_specific_sep.join(self._location.split(self._os_specific_sep)[:-1])
+        file_name = path + self._os_specific_sep + 'rigid-settings.json'
         with open(file_name, 'w') as f:
             f.write(json.dumps(self._settings, default=lambda o: o.__dict__, sort_keys=True, indent=4))
 
     def apply_orientation(self):
         zincutils.swap_axes(self._scaffold_coordinate_field, self._settings)
         self._scaffold_model.set_coordinate_field(self._scaffold_coordinate_field)
+        self._apply_callback()
 
     def rotate_scaffold(self, angle, value):
         self._update_scaffold_coordinate_field()
