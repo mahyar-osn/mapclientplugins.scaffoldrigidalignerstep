@@ -2,8 +2,19 @@ from opencmiss.zinc.field import Field
 from opencmiss.zinc.glyph import Glyph
 from opencmiss.zinc.status import OK as ZINC_OK
 from opencmiss.zinc.scenecoordinatesystem import SCENECOORDINATESYSTEM_NORMALISED_WINDOW_FIT_TOP
+from opencmiss.utils.zinc import create_node, create_finite_element_field, AbstractNodeDataObject
 
 from ..utils import maths
+
+
+class DataCreator(AbstractNodeDataObject):
+
+    def __init__(self, coordinates, time_sequence):
+        super(DataCreator, self).__init__(['coordinates'], time_sequence, ['coordinates'])
+        self._coordinates = coordinates
+
+    def coordinates(self):
+        return self._coordinates
 
 
 class DataModel(object):
@@ -15,7 +26,10 @@ class DataModel(object):
         self._material_module = material_module
 
         self._initialise_scene()
+        self._timekeeper = self._scene.getTimekeepermodule().getDefaultTimekeeper()
         self._data_coordinate_field = None
+        self._current_time = None
+        self._maximum_time = None
 
     def _initialise_scene(self):
         self._scene = self._region.getScene()
@@ -25,6 +39,16 @@ class DataModel(object):
             return self._scene
         else:
             raise ValueError('Scaffold scene is not initialised.')
+
+    def set_time(self, time):
+        self._current_time = time
+        self._timekeeper.setTime(time)
+
+    def _set_maximum_time(self):
+        self._timekeeper.setMaximumTime(self._maximum_time)
+
+    def get_maximum_time(self):
+        return self._maximum_time
 
     def _create_axis_graphics(self):
         fm = self._region.getFieldmodule()
@@ -78,6 +102,7 @@ class DataModel(object):
         axes.setName('display_axes')
 
     def _create_data_point_graphics(self):
+        self._timekeeper.setTime(0.0)
         points = self._scene.createGraphicsPoints()
         points.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
         points.setCoordinateField(self._data_coordinate_field)
@@ -86,11 +111,53 @@ class DataModel(object):
         point_size = self._get_auto_point_size()
         point_attr.setBaseSize(point_size)
         points.setMaterial(self._material_module.findMaterialByName('silver'))
+        points.setName('display_points')
 
     def create_data_graphics(self):
         self._create_data_point_graphics()
         self._create_axis_graphics()
         self._set_window_name()
+
+    def change_graphics(self):
+        self._scene.beginChange()
+        graphics = self._scene.findGraphicsByName('display_points')
+        graphics.setCoordinateField(self._data_coordinate_field)
+        self._scene.endChange()
+
+    def set_data_coordinate_field_from_json_file(self, json_description):
+        self._data_coordinate_field = create_finite_element_field(self._region, field_name='coordinates')
+        frames = json_description['AnnotatedFrames']
+        number_of_frames = len(frames)
+        self._maximum_time = number_of_frames
+        self._set_maximum_time()
+        time_array = [int(x) for x in range(number_of_frames)]
+        frame_numbers = list(frames.keys())
+        field_module = self._region.getFieldmodule()
+        field_module.getMatchingTimesequence(time_array)
+        field_module.beginChange()
+        for time in range(len(time_array)):
+            positions = frames[frame_numbers[time]]
+            for position_index in range(1, len(positions)):
+                position = positions[position_index][1]
+                node_creator = DataCreator(position, time_array)
+                identifier = create_node(field_module, node_creator, node_set_name='datapoints',
+                                         time=float(time_array[time]))
+        self._data_coordinate_field.setName('data_coordinates')
+        field_module.endChange()
+        return self._data_coordinate_field
+
+    def _create_node_at_location(self, location, cache, domain_type=Field.DOMAIN_TYPE_DATAPOINTS, node_id=-1):
+        fieldmodule = self._region.getFieldmodule()
+        fieldmodule.beginChange()
+        nodeset = fieldmodule.findNodesetByFieldDomainType(domain_type)
+        template = nodeset.createNodetemplate()
+        template.defineField(self._data_coordinate_field)
+        node = nodeset.createNode(node_id, template)
+        field_cache = cache
+        field_cache.setNode(node)
+        self._data_coordinate_field.assignReal(field_cache, location)
+        fieldmodule.endChange()
+        return node
 
     def _get_data_coordinate_field(self):
         fm = self._region.getFieldmodule()
@@ -119,6 +186,9 @@ class DataModel(object):
         data_points = fm.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
         minimums, maximums = self._get_nodeset_minimum_maximum(data_points, self._data_coordinate_field)
         return minimums, maximums
+
+    def get_range(self):
+        return self._get_data_range()
 
     def _get_auto_point_size(self):
         minimums, maximums = self._get_data_range()
