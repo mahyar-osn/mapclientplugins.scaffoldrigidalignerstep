@@ -30,6 +30,7 @@ class DataModel(object):
         self._data_coordinate_field = None
         self._current_time = None
         self._maximum_time = None
+        self._time_sequence = None
 
     def _initialise_scene(self):
         self._scene = self._region.getScene()
@@ -49,6 +50,9 @@ class DataModel(object):
 
     def get_maximum_time(self):
         return self._maximum_time
+
+    def get_time_sequence(self):
+        return self._time_sequence
 
     def _create_axis_graphics(self):
         fm = self._region.getFieldmodule()
@@ -130,18 +134,18 @@ class DataModel(object):
         number_of_frames = len(frames)
         self._maximum_time = number_of_frames
         self._set_maximum_time()
-        time_array = [int(x) for x in range(number_of_frames)]
+        self._time_sequence = [int(x) for x in range(number_of_frames)]
         frame_numbers = list(frames.keys())
         field_module = self._region.getFieldmodule()
-        field_module.getMatchingTimesequence(time_array)
+        field_module.getMatchingTimesequence(self._time_sequence)
         field_module.beginChange()
-        for time in range(len(time_array)):
+        for time in range(len(self._time_sequence)):
             positions = frames[frame_numbers[time]]
             for position_index in range(1, len(positions)):
                 position = positions[position_index][1]
-                node_creator = DataCreator(position, time_array)
+                node_creator = DataCreator(position, self._time_sequence)
                 identifier = create_node(field_module, node_creator, node_set_name='datapoints',
-                                         time=float(time_array[time]))
+                                         time=float(self._time_sequence[time]))
         self._data_coordinate_field.setName('data_coordinates')
         field_module.endChange()
         return self._data_coordinate_field
