@@ -25,6 +25,7 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
         self._partial_data = dict()
         self._model.set_settings_change_callback(self._setting_display)
         self._temporal_data_flag = False
+        self._model_description = None
         self._make_connections()
 
     def _make_connections(self):
@@ -111,9 +112,11 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
             self._ui.overlaySceneviewerWidget.view_all()
 
     def _done_clicked(self):
-        self._model.done()
-        self._model = None
         self._done_callback()
+
+    def get_model_description(self):
+        self._model_description = self._model.done(self._temporal_data_flag)
+        return self._model_description
 
     def _set_scaffold_checkbox(self, value):
         if value == 'Z':
