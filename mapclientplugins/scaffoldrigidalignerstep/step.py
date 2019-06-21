@@ -35,14 +35,15 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
                       'generator_model'))
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
-                      '<not-set>'))
+                      'model_description'))
         # Port data:
         self._pointCloudData = None  # file_location: point cloud data
         self._scaffoldParams = None  # scaffold
-        self._portData2 = None  # <not-set>
+        self._portData2 = None  # model_description
         # Config:
         self._config = {}
         self._config['identifier'] = ''
+        self._model = None
         self._view = None
 
     def execute(self):
@@ -54,24 +55,28 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
         # Put your execute step code here before calling the '_doneExecution' method.
         if self._view is None:
             context = 'ScaffoldRigidAlignerContext'
-            model = MasterModel(context, self._scaffoldParams[0])
-            model.initialise_scaffold(self._scaffoldParams[0])
+            self._model = MasterModel(context, self._scaffoldParams[0])
+            self._model.initialise_scaffold(self._scaffoldParams[0])
             _, file_extension = os.path.splitext(self._pointCloudData)
             if file_extension in EX_FILE_FORMATS:
-                model.initialise_ex_data(self._pointCloudData)
+                self._model.initialise_ex_data(self._pointCloudData)
             elif file_extension == '.json':
-                model.initialise_json_data(self._pointCloudData)
+                self._model.initialise_json_data(self._pointCloudData)
             else:
                 raise TypeError('Data file with {} format is not supported.'
                                 'Use EX or JSON.'.format(file_extension))
 
-            model.set_location(os.path.join(self._location, self._config['identifier']))
-
-            self._view = ScaffoldRigidAlignerWidget(model)
-            # self._view.create_graphics()
-            self._view.register_done_execution(self._doneExecution)
+            self._model.set_location(os.path.join(self._location, self._config['identifier']))
+            self._view = ScaffoldRigidAlignerWidget(self._model)
+            self._view.register_done_execution(self._myDoneExecution)
 
         self._setCurrentWidget(self._view)
+
+    def _myDoneExecution(self):
+        self._portData2 = self._view.get_model_description()
+        self._model = None
+        self._view = None
+        self._doneExecution()
 
     def setPortData(self, index, dataIn):
         """
@@ -95,7 +100,7 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
 
         :param index: Index of the port to return.
         """
-        return self._portData2 # <not-set>
+        return self._portData2  # model_description
 
     def configure(self):
         """
