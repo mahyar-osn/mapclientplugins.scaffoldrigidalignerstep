@@ -12,6 +12,8 @@ from mapclientplugins.scaffoldrigidalignerstep.configuredialog import ConfigureD
 from mapclientplugins.scaffoldrigidalignerstep.model.mastermodel import MasterModel
 from mapclientplugins.scaffoldrigidalignerstep.view.scaffoldrigidalignerwidget import ScaffoldRigidAlignerWidget
 
+EX_FILE_FORMATS = ['.exf', '.exdata', '.ex2', 'exnode', '.ex']
+
 class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
     """
     Skeleton step which is intended to be a helpful starting point
@@ -54,11 +56,19 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
             context = 'ScaffoldRigidAlignerContext'
             model = MasterModel(context, self._scaffoldParams[0])
             model.initialise_scaffold(self._scaffoldParams[0])
-            model.initialise_data(self._pointCloudData)
+            _, file_extension = os.path.splitext(self._pointCloudData)
+            if file_extension in EX_FILE_FORMATS:
+                model.initialise_ex_data(self._pointCloudData)
+            elif file_extension == '.json':
+                model.initialise_json_data(self._pointCloudData)
+            else:
+                raise TypeError('Data file with {} format is not supported.'
+                                'Use EX or JSON.'.format(file_extension))
+
             model.set_location(os.path.join(self._location, self._config['identifier']))
 
             self._view = ScaffoldRigidAlignerWidget(model)
-            self._view.create_graphics()
+            # self._view.create_graphics()
             self._view.register_done_execution(self._doneExecution)
 
         self._setCurrentWidget(self._view)
