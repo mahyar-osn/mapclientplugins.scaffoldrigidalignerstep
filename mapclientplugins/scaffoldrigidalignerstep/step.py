@@ -38,7 +38,7 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
                       'model_description'))
         # Port data:
         self._pointCloudData = None  # file_location: point cloud data
-        self._scaffoldParams = None  # scaffold
+        self._modelDescription = None  # scaffold
         self._portData2 = None  # model_description
         # Config:
         self._config = {}
@@ -55,8 +55,12 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
         # Put your execute step code here before calling the '_doneExecution' method.
         if self._view is None:
             context = 'ScaffoldRigidAlignerContext'
-            self._model = MasterModel(context, self._scaffoldParams[0])
-            self._model.initialise_scaffold(self._scaffoldParams[0])
+
+            modelDescription = self._modelDescription.get_scaffold_description()
+            self._model = MasterModel(context, modelDescription)
+            sir = self._model.get_stream()
+            self._model.initialise_scaffold(sir)
+
             _, file_extension = os.path.splitext(self._pointCloudData)
             if file_extension in EX_FILE_FORMATS:
                 self._model.initialise_ex_data(self._pointCloudData)
@@ -73,7 +77,10 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
         self._setCurrentWidget(self._view)
 
     def _myDoneExecution(self):
-        self._portData2 = self._view.get_model_description()
+        scaffoldDescription = self._view.get_model_description()
+        modelDescription = self._modelDescription
+        fullDescription = [scaffoldDescription, modelDescription]
+        self._portData2 = fullDescription
         self._model = None
         self._view = None
         self._doneExecution()
@@ -90,7 +97,7 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
         if index == 0:
             self._pointCloudData = dataIn  # file_location: point cloud data
         elif index == 1:
-            self._scaffoldParams = dataIn  # scaffold
+            self._modelDescription = dataIn  # scaffold
 
     def getPortData(self, index):
         """
