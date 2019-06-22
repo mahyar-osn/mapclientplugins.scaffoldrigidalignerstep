@@ -19,7 +19,7 @@ else:
 
 class MasterModel(object):
 
-    def __init__(self, context, scaffold_path):
+    def __init__(self, context, description):
 
         self._context = Context(context)
         self._material_module = self._context.getMaterialmodule()
@@ -27,8 +27,18 @@ class MasterModel(object):
         self._data_region = self._context.createRegion()
         self._scaffold_region.setName('scaffold_region')
         self._data_region.setName('data_region')
-        self._scaffold_path = scaffold_path
 
+        stream_information = self._scaffold_region.createStreaminformationRegion()
+        memory_resource = stream_information.createStreamresourceMemoryBuffer(description['elements3D'])
+        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_MESH3D)
+        memory_resource = stream_information.createStreamresourceMemoryBuffer(description['elements2D'])
+        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_MESH2D)
+        memory_resource = stream_information.createStreamresourceMemoryBuffer(description['elements1D'])
+        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_MESH1D)
+        memory_resource = stream_information.createStreamresourceMemoryBuffer(description['nodes'])
+        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_NODES)
+
+        self._stream_information = stream_information
         self._data_file_name = None
         self._data_sir = None
 
@@ -54,6 +64,9 @@ class MasterModel(object):
         self._settings_change_callback = None
         self._location = None
         self._aligned_scaffold_filename = None
+
+    def get_stream(self):
+        return self._stream_information
 
     def _initialise_glyph_material(self):
         self._glyph_module = self._context.getGlyphmodule()
@@ -93,7 +106,7 @@ class MasterModel(object):
                               scaffold_up=None, data_up=None,
                               flip=None)
         self._apply_callback()
-        self.initialise_scaffold(self._scaffold_path)
+        self.initialise_scaffold(self._stream_information)
 
     def get_context(self):
         return self._context
@@ -183,10 +196,10 @@ class MasterModel(object):
             diff = maths.eldiv(self._scaffold_model.get_scale(), self._data_model.get_scale())
         return sum(diff) / len(diff)
 
-    def initialise_scaffold(self, file_name):
+    def initialise_scaffold(self, stream):
         if self._scaffold_coordinate_field is not None:
             self._scaffold_coordinate_field = None
-        result = self._scaffold_region.readFile(file_name)
+        result = self._scaffold_region.read(stream)
         if result != ZINC_OK:
             raise ValueError('Failed to read and initialise scaffold.')
         self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
@@ -312,10 +325,20 @@ class MasterModel(object):
 
     def _write_scaffold(self):
         resources = {}
+
         stream_information = self._scaffold_region.createStreaminformationRegion()
         memory_resource = stream_information.createStreamresourceMemory()
-        resources['elements'] = memory_resource
+        resources['elements3D'] = memory_resource
         stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_MESH3D)
+
+        memory_resource = stream_information.createStreamresourceMemory()
+        resources['elements2D'] = memory_resource
+        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_MESH2D)
+
+        memory_resource = stream_information.createStreamresourceMemory()
+        resources['elements1D'] = memory_resource
+        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_MESH1D)
+
         memory_resource = stream_information.createStreamresourceMemory()
         stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_NODES)
         resources['nodes'] = memory_resource
@@ -392,5 +415,5 @@ class ModelDescription(object):
     def get_end_time(self):
         return self._time[-1]
 
-    def get_epoch_count(self):
+    def get_time_count(self):
         return len(self._time)
