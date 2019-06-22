@@ -1,6 +1,8 @@
 import json
 import platform
 
+import math
+
 from opencmiss.zinc.context import Context
 from opencmiss.zinc.field import Field
 from opencmiss.zinc.status import OK as ZINC_OK
@@ -58,6 +60,7 @@ class MasterModel(object):
 
         self._os_specific_sep = '\\' if WINDOWS_OS_FLAG else '/'
 
+        self._current_angle_vale = [0., 0., 0.]
         self._data_coordinate_field = None
         self._scaffold_coordinate_field = None
         self._transformed_scaffold_field = None
@@ -278,24 +281,36 @@ class MasterModel(object):
 
     def rotate_scaffold(self, angle, value):
         self._update_scaffold_coordinate_field()
-
-        self._settings[angle] = value
-        euler_angles = [self._settings['yaw'], self._settings['pitch'], self._settings['roll']]
-        angles = [x * 0.1 for x in euler_angles]
-        rotation_matrix = maths.eulerToRotationMatrix3(angles)
-        rotation_matrix_flattened = [columns for rows in rotation_matrix for columns in rows]
-        fm = self._scaffold_region.getFieldmodule()
-        fm.beginChange()
-        rotation_field = fm.createFieldConstant(rotation_matrix_flattened)
-        if self._transformed_scaffold_field is None:
-            self._transformed_scaffold_field = fm.createFieldMatrixMultiply(3, rotation_field,
-                                                                            self._scaffold_coordinate_field)
+        next_angle_value = value
+        if angle == 'yaw':
+            if next_angle_value > self._current_angle_vale[0]:
+                angle_value = next_angle_value - self._current_angle_vale[0]
+            else:
+                angle_value = -(self._current_angle_vale[0] - next_angle_value)
+            euler_angles = [angle_value, 0., 0.]
+            self._current_angle_vale[0] = next_angle_value
+            self._settings['yaw'] = next_angle_value
+        elif angle == 'pitch':
+            if next_angle_value > self._current_angle_vale[1]:
+                angle_value = next_angle_value - self._current_angle_vale[1]
+            else:
+                angle_value = -(self._current_angle_vale[1] - next_angle_value)
+            euler_angles = [0., angle_value, 0.]
+            self._current_angle_vale[1] = next_angle_value
+            self._settings['pitch'] = next_angle_value
         else:
-            self._transformed_scaffold_field = None
-            self._transformed_scaffold_field = fm.createFieldMatrixMultiply(3, rotation_field,
-                                                                            self._scaffold_coordinate_field)
-        fm.endChange()
-        self._scaffold_model.set_scaffold_graphics_post_rotate(self._transformed_scaffold_field)
+            if next_angle_value > self._current_angle_vale[2]:
+                angle_value = next_angle_value - self._current_angle_vale[2]
+            else:
+                angle_value = -(self._current_angle_vale[2] - next_angle_value)
+            euler_angles = [0., 0., angle_value]
+            self._current_angle_vale[2] = next_angle_value
+            self._settings['roll'] = next_angle_value
+        angles = euler_angles
+        angles = [math.radians(x) for x in angles]
+        rotation = maths.eulerToRotationMatrix3(angles)
+        zincutils.transform_coordinates(self._scaffold_coordinate_field, rotation)
+        # self._scaffold_model.set_scaffold_graphics_post_rotate(self._transformed_scaffold_field)
         self._apply_callback()
 
     def _apply_callback(self):
@@ -317,7 +332,7 @@ class MasterModel(object):
         self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
 
     def done(self, time=False):
-        self._align_scaffold_on_data()
+        # self._align_scaffold_on_data()
         self.save_settings()
         self._scaffold_model.write_model(self._aligned_scaffold_filename)
         model_description = self._get_model_description(time)
@@ -360,7 +375,7 @@ class MasterModel(object):
                 stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_DATAPOINTS)
                 stream_information.setResourceAttributeReal(memory_resource, StreaminformationRegion.ATTRIBUTE_TIME,
                                                             time_value)
-                resources['datapoints_' + str(time_value)] = memory_resource
+                resources[str(time_value)] = memory_resource
                 self._data_region.write(stream_information)
 
                 buffer_contents = {}
