@@ -1,3 +1,5 @@
+import random
+
 from opencmiss.zinc.field import Field
 from opencmiss.zinc.glyph import Glyph
 from opencmiss.zinc.status import OK as ZINC_OK
@@ -5,6 +7,7 @@ from opencmiss.zinc.scenecoordinatesystem import SCENECOORDINATESYSTEM_NORMALISE
 from opencmiss.utils.zinc import create_node, create_finite_element_field, AbstractNodeDataObject
 
 from ..utils import maths
+from ..utils import zincutils
 
 
 class DataCreator(AbstractNodeDataObject):
@@ -24,10 +27,10 @@ class DataModel(object):
         self._context = context
         self._region = region
         self._material_module = material_module
+        self._data_coordinate_field = create_finite_element_field(self._region, field_name='coordinates')
 
         self._initialise_scene()
         self._timekeeper = self._scene.getTimekeepermodule().getDefaultTimekeeper()
-        self._data_coordinate_field = None
         self._current_time = None
         self._maximum_time = None
         self._time_sequence = None
@@ -106,7 +109,6 @@ class DataModel(object):
         axes.setName('display_axes')
 
     def _create_data_point_graphics(self):
-        self._timekeeper.setTime(0.0)
         points = self._scene.createGraphicsPoints()
         points.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
         points.setCoordinateField(self._data_coordinate_field)
@@ -129,26 +131,57 @@ class DataModel(object):
         self._scene.endChange()
 
     def set_data_coordinate_field_from_json_file(self, json_description):
-        self._data_coordinate_field = create_finite_element_field(self._region, field_name='coordinates')
         frames = json_description['AnnotatedFrames']
         number_of_frames = len(frames)
         self._maximum_time = number_of_frames
         self._set_maximum_time()
         self._time_sequence = [int(x) for x in range(number_of_frames)]
+
+        sorted_len_frames = self._get_minimum_number_of_datapoints_from_jason_dict(frames)
+        smallest_sample_length = len(frames[sorted_len_frames[0]])
         frame_numbers = list(frames.keys())
         field_module = self._region.getFieldmodule()
-        field_module.getMatchingTimesequence(self._time_sequence)
         field_module.beginChange()
+        node_set = field_module.findNodesetByName('datapoints')
+        field_cache = field_module.createFieldcache()
+
+        all_positions = list()
         for time in range(len(self._time_sequence)):
-            positions = frames[frame_numbers[time]]
-            for position_index in range(1, len(positions)):
-                position = positions[position_index][1]
-                node_creator = DataCreator(position, self._time_sequence)
-                identifier = create_node(field_module, node_creator, node_set_name='datapoints',
-                                         time=float(self._time_sequence[time]))
-        self._data_coordinate_field.setName('data_coordinates')
+            groups_and_positions = frames[frame_numbers[time]]
+            positions = [x[1] for x in groups_and_positions]
+            positions = random.sample(positions, smallest_sample_length)
+            all_positions.append(positions)
+
+        positions_timewise = list()
+        for position in range(len(all_positions[0])):
+            temp = list()
+            for time in range(len(all_positions)):
+                temp.append(all_positions[time][position])
+            positions_timewise.append(temp)
+
+        for index in range(len(positions_timewise)):
+            locations = positions_timewise[index]
+            location = locations[0]
+            data_creator = DataCreator(location, self._time_sequence)
+            identifier = create_node(field_module, data_creator, node_set_name='datapoints',
+                                     time=self._time_sequence[0])
+            node = node_set.findNodeByIdentifier(identifier)
+            field_cache.setNode(node)
+            assert len(self._time_sequence) == len(locations)
+            for next_index in range(1, number_of_frames):
+                location = locations[next_index]
+                if location == [0., 0., 0.]:
+                    print(next_index)
+                time = self._time_sequence[next_index]
+                field_cache.setTime(time)
+                self._data_coordinate_field.assignReal(field_cache, location)
         field_module.endChange()
+        self._data_coordinate_field.setName('data_coordinates')
         return self._data_coordinate_field
+
+    @staticmethod
+    def _get_minimum_number_of_datapoints_from_jason_dict(frames):
+        return sorted(frames, key=lambda key: len(frames[key]))
 
     def _create_node_at_location(self, location, cache, domain_type=Field.DOMAIN_TYPE_DATAPOINTS, node_id=-1):
         fieldmodule = self._region.getFieldmodule()
