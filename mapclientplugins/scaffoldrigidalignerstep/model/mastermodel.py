@@ -83,7 +83,8 @@ class MasterModel(object):
     def initialise_time_graphics(self, time):
         self._timekeeper.setTime(time)
         # data_positions = self._get_data_positions_at_time(time)
-        # print(data_positions)
+        # for position in data_positions:
+        #     print(position)
 
     def _get_data_positions_at_time(self, time_index):
         field_module = self._data_region.getFieldmodule()
@@ -328,11 +329,30 @@ class MasterModel(object):
         zincutils.offset_scaffold(self._scaffold_coordinate_field, offset)
         self._scaffold_model.set_coordinate_field(self._scaffold_coordinate_field)
 
+    def _scale_scaffold_to_data(self):
+        data_minimums, data_maximums = self._data_model.get_range()
+        data_range = maths.sub(data_maximums, data_minimums)
+        model_minimums, model_maximums = self._scaffold_model.get_range()
+        model_range = maths.sub(model_maximums, model_minimums)
+        model_data_difference = maths.eldiv(data_range, model_range)
+        mean_scale = (sum(model_data_difference) / len(model_data_difference))
+        self._apply_scale(model_data_difference)
+
+    def _apply_scale(self, scale):
+        if scale[0] == 0.:
+            scale[0] = (scale[1] + scale[2]) / 2
+        elif scale[1] == 0.:
+            scale[1] = (scale[0] + scale[2]) / 2
+        elif scale[2] == 0.:
+            scale[2] = (scale[0] + scale[1]) / 2
+        zincutils.scale_coordinates(self._scaffold_coordinate_field, scale)
+
     def _update_scaffold_coordinate_field(self):
         self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
 
     def done(self, time=False):
-        # self._align_scaffold_on_data()
+        self._scale_scaffold_to_data()
+        self._align_scaffold_on_data()
         self.save_settings()
         self._scaffold_model.write_model(self._aligned_scaffold_filename)
         model_description = self._get_model_description(time)
