@@ -161,7 +161,7 @@ class ScaffoldModel(object):
         minimums, maximums = self._get_node_coordinates_range()
         return maths.sub(minimums, maximums)
 
-    def _getMesh(self):
+    def _get_mesh(self):
         fm = self._region.getFieldmodule()
         for dimension in range(3, 0, -1):
             mesh = fm.findMeshByDimension(dimension)
@@ -170,7 +170,7 @@ class ScaffoldModel(object):
         raise ValueError('Model contains no mesh')
 
     def _get_model_coordinate_field(self):
-        mesh = self._getMesh()
+        mesh = self._get_mesh()
         element = mesh.createElementiterator().next()
         if not element.isValid():
             raise ValueError('Model contains no elements')
