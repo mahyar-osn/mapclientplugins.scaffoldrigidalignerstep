@@ -60,13 +60,14 @@ class MasterModel(object):
 
         self._os_specific_sep = '\\' if WINDOWS_OS_FLAG else '/'
 
-        self._current_angle_vale = [0., 0., 0.]
+        self._current_angle_value = [0., 0., 0.]
         self._data_coordinate_field = None
         self._scaffold_coordinate_field = None
         self._transformed_scaffold_field = None
         self._settings_change_callback = None
         self._location = None
         self._aligned_scaffold_filename = None
+        self._scaffold_data_scale_ratio = None
 
     def get_stream(self):
         return self._stream_information
@@ -156,48 +157,39 @@ class MasterModel(object):
 
     def get_scaffold_to_data_ratio(self, partial=None):
         if partial:
-            # Partial X
-            if [x for x in partial.keys()][0] == 'X':
-                if partial['X'] != 0.0:
-                    data_range_temp = self._data_model.get_scale()
-                    correction_factor = [partial['X'], 1.0, 1.0]
-                    data_range = maths.eldiv(data_range_temp, correction_factor)
-                    diff = maths.eldiv(self._scaffold_model.get_scale(), data_range)
-                else:
-                    scaffold_range = self._scaffold_model.get_scale()
-                    data_range = self._data_model.get_scale()[1:]
-                    data_range.insert(0, self._scaffold_model.get_scale()[0])
-                    diff = maths.eldiv(scaffold_range, data_range)
-            # Partial Y
-            elif [x for x in partial.keys()][0] == 'Y':
-                if partial['Y'] != 0.0:
-                    data_range_temp = self._data_model.get_scale()
-                    correction_factor = [1.0, partial['Y'], 1.0]
-                    data_range = maths.eldiv(data_range_temp, correction_factor)
-                    diff = maths.eldiv(self._scaffold_model.get_scale(), data_range)
-                else:
-                    scaffold_range = self._scaffold_model.get_scale()
-                    data_range = self._data_model.get_scale()
-                    del data_range[1]
-                    data_range.insert(1, self._scaffold_model.get_scale()[1])
-                    diff = maths.eldiv(scaffold_range, data_range)
-            # Partial Z
-            elif [x for x in partial.keys()][0] == 'Z':
-                if partial['Z'] != 0.0:
-                    data_range_temp = self._data_model.get_scale()
-                    correction_factor = [1.0, 1.0, partial['Z']]
-                    data_range = maths.eldiv(data_range_temp, correction_factor)
-                    diff = maths.eldiv(self._scaffold_model.get_scale(), data_range)
-                else:
-                    scaffold_range = self._scaffold_model.get_scale()
-                    data_range = self._data_model.get_scale()
-                    del data_range[2]
-                    data_range.insert(2, self._scaffold_model.get_scale()[2])
-                    diff = maths.eldiv(scaffold_range, data_range)
-            else:
-                raise ValueError('Incorrect partial value.')
+            correction_factors = [1.0, 1.0, 1.0]
+            for key in partial.keys():
+                if key == 'X':
+                    correction_factors[0] = partial[key]
+                elif key == 'Y':
+                    correction_factors[1] = partial[key]
+                elif key == 'Z':
+                    correction_factors[2] = partial[key]
+
+            for factor_index in range(len(correction_factors)):
+                if correction_factors[factor_index] == 0.0:
+                    correction_factors[factor_index] = 1.0
+
+            data_range_temp = self._data_model.get_scale()
+
+            for range_index in range(len(data_range_temp)):
+                if data_range_temp[range_index] == 0.0:
+                    data_range_temp[range_index] = 1.0
+
+            data_range = maths.eldiv(data_range_temp, correction_factors)
+            scaffold_scale = self._scaffold_model.get_scale()
+            diff = maths.eldiv(scaffold_scale, data_range)
+
+            for temp_index in range(len(diff)):
+                if diff[temp_index] == scaffold_scale[temp_index]:
+                    diff[temp_index] = 1.0
+
         else:
-            diff = maths.eldiv(self._scaffold_model.get_scale(), self._data_model.get_scale())
+            data_scale = self._data_model.get_scale()
+            scaffold_scale = self._scaffold_model.get_scale()
+            diff = maths.eldiv(scaffold_scale, data_scale)
+
+        self._scaffold_data_scale_ratio = diff
         return sum(diff) / len(diff)
 
     def initialise_scaffold(self, stream):
@@ -284,28 +276,28 @@ class MasterModel(object):
         self._update_scaffold_coordinate_field()
         next_angle_value = value
         if angle == 'yaw':
-            if next_angle_value > self._current_angle_vale[0]:
-                angle_value = next_angle_value - self._current_angle_vale[0]
+            if next_angle_value > self._current_angle_value[0]:
+                angle_value = next_angle_value - self._current_angle_value[0]
             else:
-                angle_value = -(self._current_angle_vale[0] - next_angle_value)
+                angle_value = -(self._current_angle_value[0] - next_angle_value)
             euler_angles = [angle_value, 0., 0.]
-            self._current_angle_vale[0] = next_angle_value
+            self._current_angle_value[0] = next_angle_value
             self._settings['yaw'] = next_angle_value
         elif angle == 'pitch':
-            if next_angle_value > self._current_angle_vale[1]:
-                angle_value = next_angle_value - self._current_angle_vale[1]
+            if next_angle_value > self._current_angle_value[1]:
+                angle_value = next_angle_value - self._current_angle_value[1]
             else:
-                angle_value = -(self._current_angle_vale[1] - next_angle_value)
+                angle_value = -(self._current_angle_value[1] - next_angle_value)
             euler_angles = [0., angle_value, 0.]
-            self._current_angle_vale[1] = next_angle_value
+            self._current_angle_value[1] = next_angle_value
             self._settings['pitch'] = next_angle_value
         else:
-            if next_angle_value > self._current_angle_vale[2]:
-                angle_value = next_angle_value - self._current_angle_vale[2]
+            if next_angle_value > self._current_angle_value[2]:
+                angle_value = next_angle_value - self._current_angle_value[2]
             else:
-                angle_value = -(self._current_angle_vale[2] - next_angle_value)
+                angle_value = -(self._current_angle_value[2] - next_angle_value)
             euler_angles = [0., 0., angle_value]
-            self._current_angle_vale[2] = next_angle_value
+            self._current_angle_value[2] = next_angle_value
             self._settings['roll'] = next_angle_value
         angles = euler_angles
         angles = [math.radians(x) for x in angles]
@@ -330,22 +322,20 @@ class MasterModel(object):
         self._scaffold_model.set_coordinate_field(self._scaffold_coordinate_field)
 
     def _scale_scaffold_to_data(self):
-        data_minimums, data_maximums = self._data_model.get_range()
-        data_range = maths.sub(data_maximums, data_minimums)
-        model_minimums, model_maximums = self._scaffold_model.get_range()
-        model_range = maths.sub(model_maximums, model_minimums)
-        model_data_difference = maths.eldiv(data_range, model_range)
-        mean_scale = (sum(model_data_difference) / len(model_data_difference))
-        self._apply_scale(model_data_difference)
+        if self._scaffold_data_scale_ratio is None:
+            self.get_scaffold_to_data_ratio()
+        self._apply_scale()
 
-    def _apply_scale(self, scale):
-        if scale[0] == 0.:
+    def _apply_scale(self):
+        scale = self._scaffold_data_scale_ratio
+        if scale[0] == 1.0:
             scale[0] = (scale[1] + scale[2]) / 2
-        elif scale[1] == 0.:
+        elif scale[1] == 1.0:
             scale[1] = (scale[0] + scale[2]) / 2
-        elif scale[2] == 0.:
+        elif scale[2] == 1.0:
             scale[2] = (scale[0] + scale[1]) / 2
-        zincutils.scale_coordinates(self._scaffold_coordinate_field, scale)
+        scale_scaffold = [1.0 / x for x in scale]
+        zincutils.scale_coordinates(self._scaffold_coordinate_field, scale_scaffold)
 
     def _update_scaffold_coordinate_field(self):
         self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
@@ -396,25 +386,24 @@ class MasterModel(object):
                 stream_information.setResourceAttributeReal(memory_resource, StreaminformationRegion.ATTRIBUTE_TIME,
                                                             time_value)
                 resources[str(time_value)] = memory_resource
-                self._data_region.write(stream_information)
+            self._data_region.write(stream_information)
 
-                buffer_contents = {}
-                for key in resources:
-                    buffer_contents[key] = resources[key].getBuffer()[1]
+            buffer_contents = {}
+            for key in resources:
+                buffer_contents[key] = resources[key].getBuffer()[1]
 
-                return buffer_contents, time_value
+            return buffer_contents, time_values
+        else:
+            memory_resource = stream_information.createStreamresourceMemory()
+            stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_DATAPOINTS)
+            resources['datapoints'] = memory_resource
+            self._data_region.write(stream_information)
 
-            else:
-                memory_resource = stream_information.createStreamresourceMemory()
-                stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_DATAPOINTS)
-                resources['datapoints'] = memory_resource
-                self._data_region.write(stream_information)
+            buffer_contents = {}
+            for key in resources:
+                buffer_contents[key] = resources[key].getBuffer()[1]
 
-                buffer_contents = {}
-                for key in resources:
-                    buffer_contents[key] = resources[key].getBuffer()[1]
-
-                return buffer_contents
+            return buffer_contents
 
     def _get_model_description(self, time=False):
         scaffold_region_description = self._write_scaffold()
@@ -435,8 +424,10 @@ class ModelDescription(object):
         self._data_region_description = data_region_description
         if time:
             self._time = time
+            self.data_is_temporal = True
         else:
             self._time = []
+            self.data_is_temporal = False
 
     def get_scaffold_region_description(self):
         return self._scaffold_region_description
