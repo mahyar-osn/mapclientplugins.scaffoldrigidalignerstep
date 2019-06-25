@@ -7,7 +7,6 @@ from opencmiss.zinc.scenecoordinatesystem import SCENECOORDINATESYSTEM_NORMALISE
 from opencmiss.utils.zinc import create_node, create_finite_element_field, AbstractNodeDataObject
 
 from ..utils import maths
-from ..utils import zincutils
 
 
 class DataCreator(AbstractNodeDataObject):
@@ -140,10 +139,6 @@ class DataModel(object):
         sorted_len_frames = self._get_minimum_number_of_datapoints_from_jason_dict(frames)
         smallest_sample_length = len(frames[sorted_len_frames[0]])
         frame_numbers = list(frames.keys())
-        field_module = self._region.getFieldmodule()
-        field_module.beginChange()
-        node_set = field_module.findNodesetByName('datapoints')
-        field_cache = field_module.createFieldcache()
 
         all_positions = list()
         for time in range(len(self._time_sequence)):
@@ -158,6 +153,11 @@ class DataModel(object):
             for time in range(len(all_positions)):
                 temp.append(all_positions[time][position])
             positions_timewise.append(temp)
+
+        field_module = self._region.getFieldmodule()
+        field_module.beginChange()
+        node_set = field_module.findNodesetByName('datapoints')
+        field_cache = field_module.createFieldcache()
 
         for index in range(len(positions_timewise)):
             locations = positions_timewise[index]
@@ -175,6 +175,7 @@ class DataModel(object):
                 time = self._time_sequence[next_index]
                 field_cache.setTime(time)
                 self._data_coordinate_field.assignReal(field_cache, location)
+
         field_module.endChange()
         self._data_coordinate_field.setName('data_coordinates')
         return self._data_coordinate_field
