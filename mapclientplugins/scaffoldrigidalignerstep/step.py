@@ -77,9 +77,9 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
         self._setCurrentWidget(self._view)
 
     def _myDoneExecution(self):
-        scaffoldDescription = self._view.get_model_description()
+        scaffoldRigidAlignerDescription = self._view.get_model_description()
         modelDescription = self._modelDescription
-        fullDescription = [scaffoldDescription, modelDescription]
+        fullDescription = [scaffoldRigidAlignerDescription, modelDescription]
         self._portData2 = fullDescription
         self._model = None
         self._view = None
