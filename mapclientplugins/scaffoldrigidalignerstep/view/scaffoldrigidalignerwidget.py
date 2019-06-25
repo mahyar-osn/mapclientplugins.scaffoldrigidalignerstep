@@ -244,7 +244,8 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
         self._model.set_time_value(0.0)
         self._model.initialise_time_graphics(0.0)
         self._view_all()
-        self._ui.timePoint_spinBox.setMaximum(self._model.get_maximum_time_from_data())
+        if self._temporal_data_flag:
+            self._ui.timePoint_spinBox.setMaximum(self._model.get_maximum_time_from_data())
 
     def _time_changed(self):
         time_value = self._ui.timePoint_spinBox.value()
