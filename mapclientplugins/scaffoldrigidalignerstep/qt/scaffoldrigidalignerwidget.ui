@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1982</width>
-    <height>998</height>
+    <width>1698</width>
+    <height>902</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -30,7 +30,7 @@
      </property>
      <property name="minimumSize">
       <size>
-       <width>410</width>
+       <width>418</width>
        <height>135</height>
       </size>
      </property>
@@ -73,8 +73,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>408</width>
-            <height>956</height>
+            <width>416</width>
+            <height>860</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -120,8 +120,8 @@ QToolBox {
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>404</width>
-                <height>892</height>
+                <width>412</width>
+                <height>796</height>
                </rect>
               </property>
               <property name="sizePolicy">
@@ -131,7 +131,7 @@ QToolBox {
                </sizepolicy>
               </property>
               <attribute name="label">
-               <string>Initial Rigid Alignment</string>
+               <string>Control Panel</string>
               </attribute>
               <layout class="QVBoxLayout" name="verticalLayout_5">
                <property name="spacing">
@@ -152,7 +152,7 @@ QToolBox {
                <item>
                 <widget class="QGroupBox" name="alignSettingsGroupBox">
                  <property name="title">
-                  <string>Scaffold alignment</string>
+                  <string/>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_7">
                   <property name="spacing">
@@ -161,6 +161,213 @@ QToolBox {
                   <property name="margin">
                    <number>3</number>
                   </property>
+                  <item>
+                   <widget class="QFrame" name="ifTime_frame">
+                    <property name="frameShape">
+                     <enum>QFrame::StyledPanel</enum>
+                    </property>
+                    <property name="frameShadow">
+                     <enum>QFrame::Raised</enum>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayout_8">
+                     <item row="0" column="0">
+                      <widget class="QLabel" name="timeData_label">
+                       <property name="text">
+                        <string>Is data recorded over time?</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="1">
+                      <widget class="QRadioButton" name="timeNo_radioButton">
+                       <property name="text">
+                        <string>No</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="2" column="1">
+                      <widget class="QRadioButton" name="timeYes_radioButton">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="text">
+                        <string>Yes</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="17" column="0">
+                      <spacer name="horizontalSpacer_4">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeType">
+                        <enum>QSizePolicy::Preferred</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>60</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item row="17" column="3">
+                      <widget class="QSpinBox" name="timePoint_spinBox">
+                       <property name="enabled">
+                        <bool>false</bool>
+                       </property>
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="maximum">
+                        <number>1000000000</number>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="17" column="2">
+                      <widget class="QLabel" name="timePoint_label">
+                       <property name="enabled">
+                        <bool>false</bool>
+                       </property>
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="text">
+                        <string>Time-point:</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="3" column="0">
+                      <widget class="QPushButton" name="timeSkip_pushButton">
+                       <property name="enabled">
+                        <bool>false</bool>
+                       </property>
+                       <property name="text">
+                        <string>Confirm and Load Data</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QFrame" name="partial_frame">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="frameShape">
+                     <enum>QFrame::StyledPanel</enum>
+                    </property>
+                    <property name="frameShadow">
+                     <enum>QFrame::Raised</enum>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayout_7">
+                     <item row="1" column="7">
+                      <widget class="QLineEdit" name="partialZ_lineEdit">
+                       <property name="enabled">
+                        <bool>false</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="2" column="5">
+                      <widget class="QLabel" name="partialY_label">
+                       <property name="text">
+                        <string>Y:</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="3" column="5">
+                      <widget class="QLabel" name="partialX_label">
+                       <property name="text">
+                        <string>X:</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="3" column="7">
+                      <widget class="QLineEdit" name="partialXlineEdit">
+                       <property name="enabled">
+                        <bool>false</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="1" column="2">
+                      <widget class="QLabel" name="partial_label">
+                       <property name="text">
+                        <string>Is data cloud partial?</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="2" column="3">
+                      <spacer name="verticalSpacer_7">
+                       <property name="orientation">
+                        <enum>Qt::Vertical</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>20</width>
+                         <height>40</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item row="2" column="7">
+                      <widget class="QLineEdit" name="partialY_lineEdit">
+                       <property name="enabled">
+                        <bool>false</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="1" column="5">
+                      <widget class="QLabel" name="partialZ_label">
+                       <property name="text">
+                        <string>Z:</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="1" column="3">
+                      <widget class="QCheckBox" name="partialData_checkBox">
+                       <property name="text">
+                        <string/>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="2" column="4">
+                      <spacer name="horizontalSpacer_2">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item row="4" column="7">
+                      <widget class="QCheckBox" name="visualAid_checkBox">
+                       <property name="enabled">
+                        <bool>false</bool>
+                       </property>
+                       <property name="text">
+                        <string>Visual aid</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
                   <item>
                    <widget class="QFrame" name="scaffoldAxis_frame">
                     <property name="minimumSize">
@@ -179,7 +386,7 @@ QToolBox {
                      <item row="0" column="2">
                       <widget class="QRadioButton" name="scaffoldY_radioButton">
                        <property name="sizePolicy">
-                        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                          <horstretch>0</horstretch>
                          <verstretch>0</verstretch>
                         </sizepolicy>
@@ -189,8 +396,24 @@ QToolBox {
                        </property>
                       </widget>
                      </item>
+                     <item row="0" column="0">
+                      <widget class="QLabel" name="scaffoldAxis_label">
+                       <property name="cursor">
+                        <cursorShape>ArrowCursor</cursorShape>
+                       </property>
+                       <property name="text">
+                        <string>Scaffold UP axis:</string>
+                       </property>
+                      </widget>
+                     </item>
                      <item row="0" column="1">
                       <widget class="QRadioButton" name="scaffoldZ_radioButton">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="text">
                         <string>Z</string>
                        </property>
@@ -198,15 +421,14 @@ QToolBox {
                      </item>
                      <item row="0" column="3">
                       <widget class="QRadioButton" name="scaffoldX_radioButton">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="text">
                         <string>X</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="0">
-                      <widget class="QLabel" name="scaffoldAxis_label">
-                       <property name="text">
-                        <string>Scaffold UP axis:</string>
                        </property>
                       </widget>
                      </item>
@@ -228,15 +450,14 @@ QToolBox {
                      <enum>QFrame::Raised</enum>
                     </property>
                     <layout class="QGridLayout" name="gridLayout_3">
-                     <item row="2" column="3">
-                      <widget class="QRadioButton" name="dataX_radioButton">
-                       <property name="text">
-                        <string>X</string>
-                       </property>
-                      </widget>
-                     </item>
                      <item row="2" column="1">
                       <widget class="QRadioButton" name="dataZ_radioButton">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="text">
                         <string>Z</string>
                        </property>
@@ -245,7 +466,7 @@ QToolBox {
                      <item row="2" column="2">
                       <widget class="QRadioButton" name="datadY_radioButton">
                        <property name="sizePolicy">
-                        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                          <horstretch>0</horstretch>
                          <verstretch>0</verstretch>
                         </sizepolicy>
@@ -257,8 +478,21 @@ QToolBox {
                      </item>
                      <item row="2" column="0">
                       <widget class="QLabel" name="dataAxis_label">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="text">
                         <string>Data UP axis:</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="2" column="3">
+                      <widget class="QRadioButton" name="dataX_radioButton">
+                       <property name="text">
+                        <string>X</string>
                        </property>
                       </widget>
                      </item>
@@ -280,16 +514,13 @@ QToolBox {
                      <enum>QFrame::Raised</enum>
                     </property>
                     <layout class="QGridLayout" name="gridLayout_6">
-                     <item row="8" column="4">
-                      <widget class="QDoubleSpinBox" name="roll_doubleSpinBox"/>
-                     </item>
-                     <item row="10" column="1">
-                      <spacer name="verticalSpacer">
+                     <item row="7" column="0">
+                      <spacer name="verticalSpacer_5">
                        <property name="orientation">
                         <enum>Qt::Vertical</enum>
                        </property>
                        <property name="sizeType">
-                        <enum>QSizePolicy::Minimum</enum>
+                        <enum>QSizePolicy::Preferred</enum>
                        </property>
                        <property name="sizeHint" stdset="0">
                         <size>
@@ -300,54 +531,20 @@ QToolBox {
                       </spacer>
                      </item>
                      <item row="8" column="2">
-                      <widget class="QDoubleSpinBox" name="yaw_doubleSpinBox"/>
-                     </item>
-                     <item row="8" column="3">
-                      <widget class="QDoubleSpinBox" name="pitch_doubleSpinBox"/>
-                     </item>
-                     <item row="7" column="2">
                       <widget class="QLabel" name="yaw_label">
                        <property name="text">
                         <string>Yaw</string>
                        </property>
                       </widget>
                      </item>
-                     <item row="3" column="0">
-                      <widget class="QLabel" name="upsideDown_label">
-                       <property name="text">
-                        <string>Is UP axis upside down?</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="3" column="1">
-                      <widget class="QCheckBox" name="upsideDown_checkBox">
-                       <property name="text">
-                        <string>Flip</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="7" column="3">
-                      <widget class="QLabel" name="pitch_label">
-                       <property name="text">
-                        <string>Pitch</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="7" column="4">
+                     <item row="8" column="4">
                       <widget class="QLabel" name="roll_label">
                        <property name="text">
                         <string>Roll</string>
                        </property>
                       </widget>
                      </item>
-                     <item row="7" column="0">
-                      <widget class="QLabel" name="rotateAxis_label">
-                       <property name="text">
-                        <string>Rotation (Euler angles):</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="5" column="0">
+                     <item row="6" column="0">
                       <widget class="QPushButton" name="axisDone_pushButton">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -360,23 +557,93 @@ QToolBox {
                        </property>
                       </widget>
                      </item>
-                     <item row="6" column="0">
-                      <spacer name="verticalSpacer_5">
+                     <item row="9" column="3">
+                      <widget class="QDoubleSpinBox" name="pitch_doubleSpinBox">
+                       <property name="minimum">
+                        <double>-180.000000000000000</double>
+                       </property>
+                       <property name="maximum">
+                        <double>180.000000000000000</double>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="9" column="2">
+                      <widget class="QDoubleSpinBox" name="yaw_doubleSpinBox">
+                       <property name="minimum">
+                        <double>-180.000000000000000</double>
+                       </property>
+                       <property name="maximum">
+                        <double>180.000000000000000</double>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="3" column="1">
+                      <widget class="QCheckBox" name="upsideDown_checkBox">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="text">
+                        <string>Flip</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="8" column="0">
+                      <widget class="QLabel" name="rotateAxis_label">
+                       <property name="text">
+                        <string>Rotation (Euler angles):</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="9" column="4">
+                      <widget class="QDoubleSpinBox" name="roll_doubleSpinBox">
+                       <property name="minimum">
+                        <double>-180.000000000000000</double>
+                       </property>
+                       <property name="maximum">
+                        <double>180.000000000000000</double>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="3" column="0">
+                      <widget class="QLabel" name="upsideDown_label">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="text">
+                        <string>Is UP axis upside down?</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="11" column="1">
+                      <spacer name="verticalSpacer">
                        <property name="orientation">
                         <enum>Qt::Vertical</enum>
                        </property>
                        <property name="sizeType">
-                        <enum>QSizePolicy::Minimum</enum>
+                        <enum>QSizePolicy::Preferred</enum>
                        </property>
                        <property name="sizeHint" stdset="0">
                         <size>
                          <width>20</width>
-                         <height>10</height>
+                         <height>20</height>
                         </size>
                        </property>
                       </spacer>
                      </item>
-                     <item row="4" column="1">
+                     <item row="8" column="3">
+                      <widget class="QLabel" name="pitch_label">
+                       <property name="text">
+                        <string>Pitch</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="5" column="1">
                       <spacer name="verticalSpacer_3">
                        <property name="orientation">
                         <enum>Qt::Vertical</enum>
@@ -396,41 +663,147 @@ QToolBox {
                    </widget>
                   </item>
                   <item>
-                   <widget class="QWidget" name="alignLoadSaveWidgets" native="true">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <layout class="QGridLayout" name="gridLayout" rowstretch="0,0">
-                     <property name="margin">
-                      <number>0</number>
-                     </property>
-                     <property name="spacing">
-                      <number>3</number>
-                     </property>
-                     <item row="1" column="2">
-                      <widget class="QPushButton" name="loadSettingsButton">
+                   <widget class="QWidget" name="scale_widget" native="true">
+                    <layout class="QGridLayout" name="gridLayout_4">
+                     <item row="1" column="0">
+                      <widget class="QLineEdit" name="scaleRatio_lineEdit">
                        <property name="enabled">
-                        <bool>true</bool>
+                        <bool>false</bool>
                        </property>
-                       <property name="toolTip">
-                        <string>Load pre-saved alignment settings</string>
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="0">
+                      <widget class="QLabel" name="scaleRatio_label">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
                        </property>
                        <property name="text">
-                        <string>Load Settings</string>
+                        <string>Scaffold to data scale ratio:</string>
                        </property>
                       </widget>
                      </item>
                      <item row="1" column="1">
-                      <widget class="QPushButton" name="saveSettingsButton">
-                       <property name="toolTip">
-                        <string>Offset the model to the centre of the data points. May need to click View All afterwards.</string>
+                      <widget class="QPushButton" name="scaleRatio_pushButton">
+                       <property name="enabled">
+                        <bool>false</bool>
                        </property>
                        <property name="text">
-                        <string>Save Settings</string>
+                        <string>Calculate</string>
                        </property>
+                      </widget>
+                     </item>
+                     <item row="2" column="1">
+                      <spacer name="verticalSpacer_4">
+                       <property name="orientation">
+                        <enum>Qt::Vertical</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>20</width>
+                         <height>40</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item row="1" column="2">
+                      <spacer name="horizontalSpacer_7">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QWidget" name="resetButton_widget" native="true">
+                    <layout class="QGridLayout" name="gridLayout_5">
+                     <item row="5" column="1">
+                      <spacer name="verticalSpacer_6">
+                       <property name="orientation">
+                        <enum>Qt::Vertical</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>20</width>
+                         <height>40</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item row="2" column="0" colspan="2">
+                      <widget class="QWidget" name="alignLoadSaveWidgets" native="true">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <layout class="QGridLayout" name="gridLayout">
+                        <item row="0" column="2">
+                         <widget class="QPushButton" name="loadSettingsButton">
+                          <property name="enabled">
+                           <bool>true</bool>
+                          </property>
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="toolTip">
+                           <string>Load pre-saved alignment settings</string>
+                          </property>
+                          <property name="text">
+                           <string>Load Settings</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QPushButton" name="saveSettingsButton">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="toolTip">
+                           <string>Offset the model to the centre of the data points. May need to click View All afterwards.</string>
+                          </property>
+                          <property name="text">
+                           <string>Save Settings</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="0">
+                         <spacer name="horizontalSpacer_3">
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>40</width>
+                            <height>20</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
+                       </layout>
                       </widget>
                      </item>
                     </layout>
@@ -440,62 +813,27 @@ QToolBox {
                 </widget>
                </item>
                <item>
-                <spacer name="verticalSpacer_4">
-                 <property name="orientation">
-                  <enum>Qt::Vertical</enum>
-                 </property>
-                 <property name="sizeType">
-                  <enum>QSizePolicy::Fixed</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>20</width>
-                   <height>10</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item>
-                <widget class="QFrame" name="scaleRatio_frame">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>100</height>
-                  </size>
-                 </property>
+                <widget class="QFrame" name="reset_frame">
                  <property name="frameShape">
                   <enum>QFrame::StyledPanel</enum>
                  </property>
                  <property name="frameShadow">
                   <enum>QFrame::Raised</enum>
                  </property>
-                 <layout class="QGridLayout" name="gridLayout_4">
-                  <item row="0" column="0">
-                   <widget class="QLabel" name="scaleRatio_label">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="text">
-                     <string>Scaffold to data scale ratio:</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="0">
-                   <widget class="QLineEdit" name="scaleRatio_lineEdit">
+                 <layout class="QHBoxLayout" name="horizontalLayout_3">
+                  <item>
+                   <widget class="QPushButton" name="alignResetButton">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>0</horstretch>
                       <verstretch>0</verstretch>
                      </sizepolicy>
+                    </property>
+                    <property name="toolTip">
+                     <string>Reset the alignment settings</string>
+                    </property>
+                    <property name="text">
+                     <string>Reset</string>
                     </property>
                    </widget>
                   </item>
@@ -503,23 +841,7 @@ QToolBox {
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="alignResetButton">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="toolTip">
-                  <string>Reset the alignment settings</string>
-                 </property>
-                 <property name="text">
-                  <string>Reset</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer name="verticalSpacer_2">
+                <spacer name="verticalSpacer_8">
                  <property name="orientation">
                   <enum>Qt::Vertical</enum>
                  </property>
@@ -587,7 +909,7 @@ QToolBox {
    <item>
     <widget class="BaseSceneviewerWidget" name="sceneviewerWidget" native="true">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+      <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
        <horstretch>1</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -598,6 +920,7 @@ QToolBox {
        <height>0</height>
       </size>
      </property>
+     <zorder>verticalSpacer_8</zorder>
     </widget>
    </item>
    <item>
@@ -610,7 +933,7 @@ QToolBox {
      </property>
      <property name="minimumSize">
       <size>
-       <width>750</width>
+       <width>725</width>
        <height>0</height>
       </size>
      </property>
