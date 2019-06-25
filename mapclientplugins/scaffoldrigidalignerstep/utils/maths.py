@@ -1,4 +1,5 @@
 from math import sqrt, cos, sin, fabs, atan2
+import numpy as np
 
 
 def magnitude(v):
@@ -142,3 +143,15 @@ def rotationMatrix3ToEuler(matrix):
 
 def axisAngleToQuaternion(axis, angle):
     return [cos(angle / 2), axis[0] * sin(angle / 2), axis[1] * sin(angle / 2), axis[2] * sin(angle / 2)]
+
+
+def directionFromMatrix(matrix):
+    R = np.array(matrix, dtype=np.float64, copy=False)
+    w, W = np.linalg.eig(R.T)
+    i = np.where(abs(np.real(w) - 1.0) < 1e-8)[0]
+    direction = np.real(W[:, i[-1]]).squeeze()
+    return direction
+
+
+if __name__ == '__main__':
+    pass
