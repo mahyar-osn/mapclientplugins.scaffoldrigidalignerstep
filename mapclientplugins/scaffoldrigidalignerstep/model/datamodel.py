@@ -26,7 +26,7 @@ class DataModel(object):
         self._context = context
         self._region = region
         self._material_module = material_module
-        self._data_coordinate_field = create_finite_element_field(self._region, field_name='coordinates')
+        self._data_coordinate_field = None
 
         self._initialise_scene()
         self._timekeeper = self._scene.getTimekeepermodule().getDefaultTimekeeper()
@@ -130,6 +130,7 @@ class DataModel(object):
         self._scene.endChange()
 
     def set_data_coordinate_field_from_json_file(self, json_description):
+        self._data_coordinate_field = create_finite_element_field(self._region, field_name='coordinates')
         frames = json_description['AnnotatedFrames']
         number_of_frames = len(frames)
         self._maximum_time = number_of_frames
@@ -217,6 +218,7 @@ class DataModel(object):
     def get_coordinate_field(self):
         field = self._get_data_coordinate_field()
         self._data_coordinate_field = field
+        self._data_coordinate_field.setName('data_coordinates')
         return field
 
     def _get_data_range(self):
