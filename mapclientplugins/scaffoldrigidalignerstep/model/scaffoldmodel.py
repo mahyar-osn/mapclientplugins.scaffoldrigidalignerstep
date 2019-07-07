@@ -112,7 +112,7 @@ class ScaffoldModel(object):
         return self._get_node_coordinates_range()
 
     def _initialise_surface_material(self):
-        self._material_module = self._context.getMaterialmodule()
+        # self._material_module = self._context.getMaterialmodule()
         self._material_module.beginChange()
 
         solid_blue = self._material_module.createMaterial()
@@ -149,6 +149,8 @@ class ScaffoldModel(object):
         self._material_module.endChange()
 
     def _initialise_scene(self):
+        if self._region.getScene():
+            self._region.getScene().removeAllGraphics()
         self._scene = self._region.getScene()
 
     def get_scene(self):
@@ -160,6 +162,11 @@ class ScaffoldModel(object):
     def get_scale(self):
         minimums, maximums = self._get_node_coordinates_range()
         return maths.sub(minimums, maximums)
+
+    def reset_region(self, region):
+        if self._region:
+            self._region = None
+        self._region = region
 
     def _get_mesh(self):
         fm = self._region.getFieldmodule()
