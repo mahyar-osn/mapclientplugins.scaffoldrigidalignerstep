@@ -14,6 +14,7 @@ from mapclientplugins.scaffoldrigidalignerstep.view.scaffoldrigidalignerwidget i
 
 EX_FILE_FORMATS = ['.exf', '.exdata', '.ex2', 'exnode', '.ex']
 
+
 class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
     """
     Skeleton step which is intended to be a helpful starting point
@@ -37,12 +38,11 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
                       'model_description'))
         # Port data:
-        self._pointCloudData = None  # file_location: point cloud data
-        self._modelDescription = None  # scaffold
+        self._point_cloud_data = None  # file_location: point cloud data
+        self._model_description = None  # scaffold
         self._portData2 = None  # model_description
         # Config:
-        self._config = {}
-        self._config['identifier'] = ''
+        self._config = {'identifier': ''}
         self._model = None
         self._view = None
 
@@ -54,33 +54,27 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
         """
         # Put your execute step code here before calling the '_doneExecution' method.
         if self._view is None:
-            context = 'ScaffoldRigidAlignerContext'
+            self._model = MasterModel(self._model_description)
 
-            modelDescription = self._modelDescription.get_scaffold_description()
-            self._model = MasterModel(context, modelDescription)
-            sir = self._model.get_stream()
-            self._model.initialise_scaffold(sir)
-
-            _, file_extension = os.path.splitext(self._pointCloudData)
+            _, file_extension = os.path.splitext(self._point_cloud_data)
             if file_extension in EX_FILE_FORMATS:
-                self._model.initialise_ex_data(self._pointCloudData)
+                self._model.initialise_ex_data(self._point_cloud_data)
             elif file_extension == '.json':
-                self._model.initialise_json_data(self._pointCloudData)
+                self._model.initialise_json_data(self._point_cloud_data)
             else:
                 raise TypeError('Data file with {} format is not supported.'
                                 'Use EX or JSON.'.format(file_extension))
 
             self._model.set_location(os.path.join(self._location, self._config['identifier']))
-            self._view = ScaffoldRigidAlignerWidget(self._model)
+
+            shareable_widget = self._model_description.get_shareable_open_gl_widget()
+            self._view = ScaffoldRigidAlignerWidget(self._model, shareable_widget)
             self._view.register_done_execution(self._myDoneExecution)
 
         self._setCurrentWidget(self._view)
 
     def _myDoneExecution(self):
-        scaffoldRigidAlignerDescription = self._view.get_model_description()
-        modelDescription = self._modelDescription
-        fullDescription = [scaffoldRigidAlignerDescription, modelDescription]
-        self._portData2 = fullDescription
+        self._portData2 = self._view.get_model_description()
         self._model = None
         self._view = None
         self._doneExecution()
@@ -95,9 +89,9 @@ class ScaffoldRigidAlignerStep(WorkflowStepMountPoint):
         :param dataIn: The data to set for the port at the given index.
         """
         if index == 0:
-            self._pointCloudData = dataIn  # file_location: point cloud data
+            self._point_cloud_data = dataIn  # file_location: point cloud data
         elif index == 1:
-            self._modelDescription = dataIn  # scaffold
+            self._model_description = dataIn  # scaffold
 
     def getPortData(self, index):
         """
