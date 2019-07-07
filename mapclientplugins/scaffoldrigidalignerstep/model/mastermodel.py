@@ -3,7 +3,6 @@ import platform
 
 import math
 
-from opencmiss.zinc.context import Context
 from opencmiss.zinc.field import Field
 from opencmiss.zinc.status import OK as ZINC_OK
 from opencmiss.zinc.streamregion import StreaminformationRegion
@@ -21,28 +20,27 @@ else:
 
 class MasterModel(object):
 
-    def __init__(self, context, description):
+    def __init__(self, description):
 
-        self._context = Context(context)
+        self._generator_model = description.get_generator()
+        self._context = description.get_context()
         self._material_module = self._context.getMaterialmodule()
-        self._scaffold_region = self._context.createRegion()
+        self._scaffold_region = description.get_region()
+
+        self._parameters = description.get_parameters()
+        self._scale = self._parameters['scale']
+        self._generator_settings = self._generator_model.getSettings()
+        self._model_name = description.get_model_name()
+        self._species = description.get_model_species()
+        self._scaffold_package = description.get_scaffold_package()
+        self._scaffold_package_class = description.get_scaffold_package_class()
+
         self._data_region = self._context.createRegion()
-        self._scaffold_region.setName('scaffold_region')
         self._data_region.setName('data_region')
 
-        stream_information = self._scaffold_region.createStreaminformationRegion()
-        memory_resource = stream_information.createStreamresourceMemoryBuffer(description['elements3D'])
-        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_MESH3D)
-        memory_resource = stream_information.createStreamresourceMemoryBuffer(description['elements2D'])
-        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_MESH2D)
-        memory_resource = stream_information.createStreamresourceMemoryBuffer(description['elements1D'])
-        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_MESH1D)
-        memory_resource = stream_information.createStreamresourceMemoryBuffer(description['nodes'])
-        stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_NODES)
-
-        self._stream_information = stream_information
         self._data_file_name = None
         self._data_sir = None
+        self._rotation = None
 
         self._scaffold_model = ScaffoldModel(self._context, self._scaffold_region, self._material_module)
         self._data_model = DataModel(self._context, self._data_region, self._material_module)
@@ -61,6 +59,7 @@ class MasterModel(object):
         self._os_specific_sep = '\\' if WINDOWS_OS_FLAG else '/'
 
         self._current_angle_value = [0., 0., 0.]
+        self._shareable_widget = None
         self._data_coordinate_field = None
         self._scaffold_coordinate_field = None
         self._transformed_scaffold_field = None
@@ -69,8 +68,11 @@ class MasterModel(object):
         self._aligned_scaffold_filename = None
         self._scaffold_data_scale_ratio = None
 
-    def get_stream(self):
-        return self._stream_information
+    def get_scale(self):
+        return self._scale
+
+    def set_shareable_widget(self, widget):
+        self._shareable_widget = widget
 
     def _initialise_glyph_material(self):
         self._glyph_module = self._context.getGlyphmodule()
@@ -111,7 +113,6 @@ class MasterModel(object):
                               scaffold_up=None, data_up=None,
                               flip=None)
         self._apply_callback()
-        self.initialise_scaffold(self._stream_information)
 
     def get_context(self):
         return self._context
@@ -161,9 +162,12 @@ class MasterModel(object):
             for key in partial.keys():
                 if key == 'X':
                     correction_factors[0] = partial[key]
+                    self._settings['partial_x'] = partial[key]
                 elif key == 'Y':
                     correction_factors[1] = partial[key]
+                    self._settings['partial_y'] = partial[key]
                 elif key == 'Z':
+                    self._settings['partial_z'] = partial[key]
                     correction_factors[2] = partial[key]
 
             for factor_index in range(len(correction_factors)):
@@ -190,14 +194,11 @@ class MasterModel(object):
             diff = maths.eldiv(scaffold_scale, data_scale)
 
         self._scaffold_data_scale_ratio = diff
-        return sum(diff) / len(diff)
+        mean_diff = sum(diff) / len(diff)
+        diff_string = '%s*%s*%s' %(diff[0], diff[1], diff[2])
+        return mean_diff, diff_string
 
-    def initialise_scaffold(self, stream):
-        if self._scaffold_coordinate_field is not None:
-            self._scaffold_coordinate_field = None
-        result = self._scaffold_region.read(stream)
-        if result != ZINC_OK:
-            raise ValueError('Failed to read and initialise scaffold.')
+    def initialise_scaffold(self,):
         self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
 
     def initialise_ex_data(self, file_name):
@@ -244,6 +245,13 @@ class MasterModel(object):
 
     def get_maximum_time_from_data(self):
         return self._data_model.get_maximum_time()
+
+    def set_generator_scale(self, scale):
+        self._generator_settings['scale'] = scale
+        self._generator_model.setSettings(self._generator_settings)
+
+    def get_generator_settings(self):
+        return self._generator_settings
 
     def set_location(self, location):
         self._location = location
@@ -301,8 +309,8 @@ class MasterModel(object):
             self._settings['roll'] = next_angle_value
         angles = euler_angles
         angles = [math.radians(x) for x in angles]
-        rotation = maths.eulerToRotationMatrix3(angles)
-        zincutils.transform_coordinates(self._scaffold_coordinate_field, rotation)
+        self._rotation = maths.eulerToRotationMatrix3(angles)
+        zincutils.transform_coordinates(self._scaffold_coordinate_field, self._rotation)
         # self._scaffold_model.set_scaffold_graphics_post_rotate(self._transformed_scaffold_field)
         self._apply_callback()
 
@@ -318,6 +326,8 @@ class MasterModel(object):
         model_minimums, model_maximums = self._scaffold_model.get_range()
         model_centre = maths.mult(maths.add(model_minimums, model_maximums), 0.5)
         offset = maths.sub(data_centre, model_centre)
+        # zincutils.swap_axes(self._scaffold_coordinate_field, self._settings)
+        # zincutils.transform_coordinates(self._scaffold_coordinate_field, self._rotation)
         zincutils.offset_scaffold(self._scaffold_coordinate_field, offset)
         self._scaffold_model.set_coordinate_field(self._scaffold_coordinate_field)
 
@@ -334,10 +344,34 @@ class MasterModel(object):
             scale[1] = (scale[0] + scale[2]) / 2
         elif scale[2] == 1.0:
             scale[2] = (scale[0] + scale[1]) / 2
+
+        # Scaling factor scaffold
         scale_scaffold = [1.0 / x for x in scale]
+
+        if self._settings['data_up'] == 'Y':
+            scale_scaffold_for_generator = [scale_scaffold[0], scale_scaffold[2], scale_scaffold[1]]
+        elif self._settings['data_up'] == 'X':
+            scale_scaffold_for_generator = [scale_scaffold[2], scale_scaffold[1], scale_scaffold[0]]
+        else:
+            scale_scaffold_for_generator = [scale_scaffold[0], scale_scaffold[1], scale_scaffold[2]]
+
+        scale_string = '%.2f*%.2f*%.2f' % (scale_scaffold_for_generator[0],
+                                           scale_scaffold_for_generator[1],
+                                           scale_scaffold_for_generator[2])
+
+        self._generator_settings['scale'] = scale_string
+        self._parameters['scale'] = scale_string
         zincutils.scale_coordinates(self._scaffold_coordinate_field, scale_scaffold)
 
     def _update_scaffold_coordinate_field(self):
+        self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
+
+    def _reset_region(self):
+        if self._scaffold_region:
+            self._scaffold_region = None
+        self._scaffold_region = self._generator_model.getRegion()
+        self._scaffold_coordinate_field = None
+        self._scaffold_model.reset_region(self._scaffold_region)
         self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
 
     def done(self, time=False):
@@ -412,16 +446,34 @@ class MasterModel(object):
         else:
             time_sequence = None
             data_region_description = self._write_data()
-        model_description = ModelDescription(scaffold_region_description, data_region_description, time_sequence)
 
+        descriptions = dict(context=self._context, scaffold_region=self._scaffold_region,
+                            coordinates=self._scaffold_coordinate_field,
+                            generator_settings=self._generator_settings, parameters=self._parameters,
+                            generator_model=self._generator_model, model_name=self._model_name,
+                            model_species=self._species, scaffold_package=self._scaffold_package,
+                            scaffold_package_class=self._scaffold_package_class, shareable_widget=self._shareable_widget,
+                            data_region_description=data_region_description, time_sequence=time_sequence)
+        model_description = ModelDescription(descriptions)
         return model_description
 
 
 class ModelDescription(object):
 
-    def __init__(self, scaffold_region_description, data_region_description, time=None):
-        self._scaffold_region_description = scaffold_region_description
-        self._data_region_description = data_region_description
+    def __init__(self, description):
+        self._context = description['context']
+        self._scaffold_region = description['scaffold_region']
+        self._coordinate_field = description['coordinates']
+        self._settings = description['generator_settings']
+        self._parameters = description['parameters']
+        self._model_name = description['model_name']
+        self._species = description['model_species']
+        self._generator_model = description['generator_model']
+        self._scaffold_package = description['scaffold_package']
+        self._scaffold_package_class = description['scaffold_package_class']
+        self._shareable_widget = description['shareable_widget']
+        self._data_region_description = description['data_region_description']
+        time = description['time_sequence']
         if time:
             self._time = time
             self.data_is_temporal = True
@@ -429,8 +481,38 @@ class ModelDescription(object):
             self._time = []
             self.data_is_temporal = False
 
-    def get_scaffold_region_description(self):
-        return self._scaffold_region_description
+    def get_context(self):
+        return self._context
+
+    def get_scaffold_region(self):
+        return self._scaffold_region
+
+    def get_coordinates(self):
+        return self._coordinate_field
+
+    def get_generator_settings(self):
+        return self._settings
+
+    def get_parameters(self):
+        return self._parameters
+
+    def get_model_name(self):
+        return self._model_name
+
+    def get_species(self):
+        return self._species
+
+    def get_generator_model(self):
+        return self._generator_model
+
+    def get_scaffold_package(self):
+        return self._scaffold_package
+
+    def get_scaffold_package_class(self):
+        return self._scaffold_package_class
+
+    def get_shareable_widget(self):
+        return self._shareable_widget
 
     def get_data_region_description(self):
         return self._data_region_description
