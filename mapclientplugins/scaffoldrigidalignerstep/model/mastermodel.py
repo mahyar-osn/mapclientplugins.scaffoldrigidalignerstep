@@ -41,6 +41,7 @@ class MasterModel(object):
         self._data_file_name = None
         self._data_sir = None
         self._rotation = None
+        self._correction_factor = None
 
         self._scaffold_model = ScaffoldModel(self._context, self._scaffold_region, self._material_module)
         self._data_model = DataModel(self._context, self._data_region, self._material_module)
@@ -180,6 +181,7 @@ class MasterModel(object):
                 if data_range_temp[range_index] == 0.0:
                     data_range_temp[range_index] = 1.0
 
+            self._correction_factor = correction_factors
             data_range = maths.eldiv(data_range_temp, correction_factors)
             scaffold_scale = self._scaffold_model.get_scale()
             diff = maths.eldiv(scaffold_scale, data_range)
@@ -192,11 +194,12 @@ class MasterModel(object):
             data_scale = self._data_model.get_scale()
             scaffold_scale = self._scaffold_model.get_scale()
             diff = maths.eldiv(scaffold_scale, data_scale)
+            self._correction_factor = None
 
         self._scaffold_data_scale_ratio = diff
-        mean_diff = sum(diff) / len(diff)
+        self._mean_diff = sum(diff) / len(diff)
         diff_string = '%s*%s*%s' %(diff[0], diff[1], diff[2])
-        return mean_diff, diff_string
+        return self._mean_diff, diff_string
 
     def initialise_scaffold(self,):
         self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
@@ -324,6 +327,7 @@ class MasterModel(object):
         data_minimums, data_maximums = self._data_model.get_range()
         data_centre = maths.mult(maths.add(data_minimums, data_maximums), 0.5)
         model_minimums, model_maximums = self._scaffold_model.get_range()
+        model_maximums[1] = model_maximums[1] / 1.4
         model_centre = maths.mult(maths.add(model_minimums, model_maximums), 0.5)
         offset = maths.sub(data_centre, model_centre)
         # zincutils.swap_axes(self._scaffold_coordinate_field, self._settings)
@@ -361,7 +365,12 @@ class MasterModel(object):
 
         self._generator_settings['scale'] = scale_string
         self._parameters['scale'] = scale_string
-        zincutils.scale_coordinates(self._scaffold_coordinate_field, scale_scaffold)
+        scale_scaffold[0] = scale_scaffold[0] + 1
+        scale_scaffold[1] = scale_scaffold[1] - 1
+        scale_scaffold[2] = scale_scaffold[2] - 1
+        # zincutils.scale_coordinates(self._scaffold_coordinate_field, scale_scaffold)
+        mean_diff = sum(scale_scaffold) / len(scale_scaffold)
+        zincutils.scale_coordinates(self._scaffold_coordinate_field, [mean_diff]*3)
 
     def _update_scaffold_coordinate_field(self):
         self._scaffold_coordinate_field = self._scaffold_model.get_coordinate_field()
@@ -448,12 +457,13 @@ class MasterModel(object):
             data_region_description = self._write_data()
 
         descriptions = dict(context=self._context, scaffold_region=self._scaffold_region,
-                            coordinates=self._scaffold_coordinate_field,
+                            coordinates=self._scaffold_coordinate_field, settings=self._settings,
                             generator_settings=self._generator_settings, parameters=self._parameters,
                             generator_model=self._generator_model, model_name=self._model_name,
                             model_species=self._species, scaffold_package=self._scaffold_package,
                             scaffold_package_class=self._scaffold_package_class, shareable_widget=self._shareable_widget,
-                            data_region_description=data_region_description, time_sequence=time_sequence)
+                            data_region_description=data_region_description, time_sequence=time_sequence,
+                            correction_factor=self._correction_factor)
         model_description = ModelDescription(descriptions)
         return model_description
 
@@ -464,7 +474,8 @@ class ModelDescription(object):
         self._context = description['context']
         self._scaffold_region = description['scaffold_region']
         self._coordinate_field = description['coordinates']
-        self._settings = description['generator_settings']
+        self._settings = description['settings']
+        self._generator_settings = description['generator_settings']
         self._parameters = description['parameters']
         self._model_name = description['model_name']
         self._species = description['model_species']
@@ -480,6 +491,7 @@ class ModelDescription(object):
         else:
             self._time = []
             self.data_is_temporal = False
+        self._correction_factor = description['correction_factor']
 
     def get_context(self):
         return self._context
@@ -490,8 +502,11 @@ class ModelDescription(object):
     def get_coordinates(self):
         return self._coordinate_field
 
-    def get_generator_settings(self):
+    def get_aligner_settings(self):
         return self._settings
+
+    def get_generator_settings(self):
+        return self._generator_settings
 
     def get_parameters(self):
         return self._parameters
@@ -525,3 +540,6 @@ class ModelDescription(object):
 
     def get_time_count(self):
         return len(self._time)
+
+    def get_correction_factor(self):
+        return self._correction_factor

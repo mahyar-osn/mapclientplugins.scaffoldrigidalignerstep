@@ -8,15 +8,16 @@ from opencmiss.zincwidgets.basesceneviewerwidget import BaseSceneviewerWidget
 
 class ScaffoldRigidAlignerWidget(QtGui.QWidget):
 
-    def __init__(self, master_model, parent=None):
+    def __init__(self, master_model, shareable_widget, parent=None):
         super(ScaffoldRigidAlignerWidget, self).__init__(parent)
 
         self._model = master_model
 
+        self._shareable_widget = shareable_widget
         self._ui = Ui_ScaffoldRigidAlignerWidget()
-        self._ui.setupUi(self, self._get_shareable_open_gl_widget())
+        self._ui.setupUi(self, self._shareable_widget)
         self._setup_handlers()
-
+        self._model.set_shareable_widget(self._shareable_widget)
         self._ui.sceneviewerWidget.set_context(self._model.get_context())
         self._ui.overlaySceneviewerWidget.set_context(self._model.get_context())
 
@@ -29,8 +30,8 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
         self._make_connections()
 
     def _make_connections(self):
-        self._ui.sceneviewerWidget.graphics_initialized.connect(self._graphics_initialized)
-        self._ui.overlaySceneviewerWidget.graphics_initialized.connect(self._graphics_initialized)
+        self._ui.sceneviewerWidget.graphics_initialized.connect(self._scaffold_graphics_initialized)
+        self._ui.overlaySceneviewerWidget.graphics_initialized.connect(self._data_graphics_initialized)
         self._ui.doneButton.clicked.connect(self._done_clicked)
         self._ui.viewAllButton.clicked.connect(self._view_all)
         self._ui.timeYes_radioButton.clicked.connect(self._data_is_temporal)
@@ -71,14 +72,28 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
         self._shareable_widget.set_context(context)
         return self._shareable_widget
 
-    def _graphics_initialized(self):
+    def _scaffold_graphics_initialized(self):
         scaffold_scene_viewer = self._ui.sceneviewerWidget.get_zinc_sceneviewer()
-        data_scene_viewer = self._ui.overlaySceneviewerWidget.get_zinc_sceneviewer()
 
-        if scaffold_scene_viewer is not None and data_scene_viewer is not None:
+        if scaffold_scene_viewer is not None:
             scaffold_scene = self._model.get_scaffold_scene()
+            # scene = self._model.get_scaffold_region().getScene()
             self._ui.sceneviewerWidget.set_scene(scaffold_scene)
 
+            if len(self._settings['view-parameters']) == 0:
+                self._view_all()
+            else:
+                eye = self._settings['view-parameters']['eye']
+                look_at = self._settings['view-parameters']['look_at']
+                up = self._settings['view-parameters']['up']
+                angle = self._settings['view-parameters']['angle']
+                self._ui.sceneviewerWidget.set_view_parameters(eye, look_at, up, angle)
+                self._view_all()
+
+    def _data_graphics_initialized(self):
+        data_scene_viewer = self._ui.overlaySceneviewerWidget.get_zinc_sceneviewer()
+
+        if data_scene_viewer is not None:
             data_scene = self._model.get_data_scene()
             self._ui.overlaySceneviewerWidget.set_scene(data_scene)
 
@@ -89,7 +104,6 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
                 look_at = self._settings['view-parameters']['look_at']
                 up = self._settings['view-parameters']['up']
                 angle = self._settings['view-parameters']['angle']
-                self._ui.sceneviewerWidget.set_view_parameters(eye, look_at, up, angle)
                 self._ui.overlaySceneviewerWidget.set_view_parameters(eye, look_at, up, angle)
                 self._view_all()
 
@@ -208,7 +222,9 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
         self._scale_ratio_display(self._partial_data)
 
     def _scale_ratio_display(self, partial=None):
-        self._display_real(self._ui.scaleRatio_lineEdit, self._model.get_scaffold_to_data_ratio(partial=partial))
+        mean, _ = self._model.get_scaffold_to_data_ratio(partial=partial)
+        # self._model.set_generator_scale(scale)
+        self._display_real(self._ui.scaleRatio_lineEdit, mean)
 
     def _yaw_clicked(self):
         value = self._ui.yaw_doubleSpinBox.value()
@@ -240,12 +256,14 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
             self._model.load_json_data()
         else:
             self._model.load_ex_data()
+        self._model.initialise_scaffold()
         self._create_graphics()
         self._model.set_time_value(0.0)
         self._model.initialise_time_graphics(0.0)
         self._view_all()
         if self._temporal_data_flag:
             self._ui.timePoint_spinBox.setMaximum(self._model.get_maximum_time_from_data())
+        # self._set_scale(self._model.get_scale())
 
     def _time_changed(self):
         time_value = self._ui.timePoint_spinBox.value()
@@ -259,6 +277,10 @@ class ScaffoldRigidAlignerWidget(QtGui.QWidget):
         self._ui.timePoint_spinBox.setEnabled(False)
         self._ui.timePoint_label.setEnabled(False)
         self._ui.timeSkip_pushButton.setEnabled(True)
+
+    def _set_scale(self, scale):
+        self._model.set_generator_scale(scale)
+        self._ui.scaleRatio_lineEdit.setText(scale)
 
     def _reset(self):
         self._model.reset_settings()

@@ -7,6 +7,7 @@ from opencmiss.zinc.scenecoordinatesystem import SCENECOORDINATESYSTEM_NORMALISE
 from opencmiss.utils.zinc import create_node, create_finite_element_field, AbstractNodeDataObject
 
 from ..utils import maths
+import numpy as np
 
 
 class DataCreator(AbstractNodeDataObject):
